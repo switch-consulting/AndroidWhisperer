@@ -1,0 +1,22 @@
+# Build outputs and generated files
+*.iml
+.gradle/
+/build/
+app/build/
+**/build/
+.externalNativeBuild/
+.cxx/
+/captures/
+
+# Local machine configuration
+local.properties
+
+# Android Studio / IntelliJ IDE files
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Agent artifacts
+.artifacts/
