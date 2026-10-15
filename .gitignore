@@ -2,7 +2,7 @@
 *.iml
 .gradle/
 /build/
-app/build/
+androidwhisperer/build/
 **/build/
 .externalNativeBuild/
 .cxx/

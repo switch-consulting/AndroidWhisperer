@@ -22,17 +22,17 @@
 
 ### Gradle Dependency
 
-Include the `:app` module in your project's `settings.gradle`:
+Include the `:androidwhisperer` module in your project's `settings.gradle`:
 
 ```groovy
-include ':app'
+include ':androidwhisperer'
 ```
 
 And add the dependency to your app module's `build.gradle`:
 
 ```groovy
 dependencies {
-    implementation project(':app')
+    implementation project(':androidwhisperer')
 }
 ```
 
@@ -111,18 +111,18 @@ whisperer.close();
 
 ## Upstream Synchronization
 
-This project includes `whisper.cpp` as a Git submodule located at `app/src/main/cpp/whisper.cpp`.
+This project includes `whisper.cpp` as a Git submodule located at `androidwhisperer/src/main/cpp/whisper.cpp`.
 
 To update `whisper.cpp` to the latest upstream release:
 
 ```bash
-git submodule update --remote app/src/main/cpp/whisper.cpp
+git submodule update --remote androidwhisperer/src/main/cpp/whisper.cpp
 ```
 
 Or checkout a specific tag:
 
 ```bash
-cd app/src/main/cpp/whisper.cpp
+cd androidwhisperer/src/main/cpp/whisper.cpp
 git checkout v1.7.1
 ```
 
@@ -134,6 +134,6 @@ git checkout v1.7.1
 
 ### Third-Party Libraries & Licenses
 
-- **`whisper.cpp`**: MIT License (Copyright © The ggml authors). Included as a Git submodule at `app/src/main/cpp/whisper.cpp`.
+- **`whisper.cpp`**: MIT License (Copyright © The ggml authors). Included as a Git submodule at `androidwhisperer/src/main/cpp/whisper.cpp`.
 - **OpenAI Whisper**: MIT License (Copyright © OpenAI).
 - **Java Native Access (JNA)**: Apache License 2.0 / LGPL v2.1.
