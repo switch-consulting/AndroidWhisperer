@@ -49,3 +49,40 @@ dependencies {
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
 }
+
+tasks.register('downloadWhisperModel') {
+    description = 'Downloads Whisper GGML model file from HuggingFace into src/main/assets/models'
+    group = 'whisper'
+
+    def whisperModelProvider = providers.gradleProperty('whisperModel').orElse('tiny')
+    def modelsDir = file("src/main/assets/models")
+
+    doLast {
+        def modelParam = whisperModelProvider.get()
+        def variant = modelParam.trim()
+        if (variant.startsWith('ggml-')) {
+            variant = variant.substring(5)
+        }
+        if (variant.endsWith('.bin')) {
+            variant = variant.substring(0, variant.length() - 4)
+        }
+
+        def fileName = "ggml-${variant}.bin"
+        def targetFile = new File(modelsDir, fileName)
+
+        if (!modelsDir.exists()) {
+            modelsDir.mkdirs()
+        }
+
+        if (targetFile.exists() && targetFile.length() > 0) {
+            logger.lifecycle("Whisper model file already exists: ${targetFile.absolutePath}")
+            return
+        }
+
+        def downloadUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${fileName}"
+        logger.lifecycle("Downloading Whisper model '${variant}' from ${downloadUrl}...")
+
+        ant.get(src: downloadUrl, dest: targetFile, skipexisting: false)
+        logger.lifecycle("Successfully downloaded ${fileName} (${targetFile.length()} bytes)")
+    }
+}

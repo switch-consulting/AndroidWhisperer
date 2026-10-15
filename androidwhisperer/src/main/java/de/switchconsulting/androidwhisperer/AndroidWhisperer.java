@@ -1,5 +1,7 @@
 package de.switchconsulting.androidwhisperer;
 
+import android.content.Context;
+
 import com.sun.jna.Pointer;
 
 import de.switchconsulting.androidwhisperer.internal.WhisperBridge;
@@ -8,6 +10,8 @@ import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
 import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,6 +92,31 @@ public final class AndroidWhisperer implements Closeable {
         if (previous != null) {
             nativeApi.whisper_free(previous);
         }
+    }
+
+    /**
+     * Initializes the engine with a model extracted from Android assets.
+     *
+     * @param context the Android application context
+     * @param assetPath relative path inside assets, e.g. "models/ggml-tiny.bin"
+     * @throws IOException if extracting the asset fails
+     */
+    public synchronized void initModelFromAsset(Context context, String assetPath)
+            throws IOException {
+        File modelFile = ModelManager.ensureModelFromAssets(context, assetPath);
+        initModelFromFile(modelFile);
+    }
+
+    /**
+     * Initializes the engine from a local File.
+     *
+     * @param modelFile the local model file
+     */
+    public synchronized void initModelFromFile(File modelFile) {
+        if (modelFile == null) {
+            throw new IllegalArgumentException("modelFile == null");
+        }
+        initModel(modelFile.getAbsolutePath());
     }
 
     /** Detects language and returns its code, e.g. "en" or "de". */
