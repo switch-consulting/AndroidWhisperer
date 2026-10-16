@@ -40,6 +40,42 @@ public final class ModelManager {
     }
 
     /**
+     * Checks whether the specified Whisper model is available (supported and present locally or in assets).
+     */
+    public static boolean isModelAvailable(Context context, WhisperModel model) {
+        if (context == null || model == null || !model.isSupported()) {
+            return false;
+        }
+
+        // Check if model file already exists locally
+        File targetFile = new File(getModelsDir(context), model.getFileName());
+        if (targetFile.exists() && targetFile.length() > 0) {
+            return true;
+        }
+
+        // Otherwise check if it can be opened from assets
+        try (InputStream in = context.getAssets().open(model.getAssetPath())) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Ensures the specified Whisper model is available and extracted to internal storage.
+     * Throws {@link WhisperModelNotAvailable} if the model is not supported or unavailable.
+     */
+    public static File ensureModel(Context context, WhisperModel model) throws IOException {
+        if (model == null) {
+            throw new IllegalArgumentException("model == null");
+        }
+        if (!isModelAvailable(context, model)) {
+            throw new WhisperModelNotAvailable("Model not available or not supported: " + model);
+        }
+        return ensureModelFromAssets(context, model.getAssetPath());
+    }
+
+    /**
      * Ensures an asset model (e.g. "models/ggml-tiny.bin" or "ggml-tiny.bin")
      * is extracted to internal storage. Returns the target {@link File}.
      */

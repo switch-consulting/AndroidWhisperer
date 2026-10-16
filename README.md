@@ -44,11 +44,17 @@ dependencies {
 
 ```java
 import de.switchconsulting.androidwhisperer.AndroidWhisperer;
+import de.switchconsulting.androidwhisperer.WhisperModel;
 
 AndroidWhisperer whisperer = new AndroidWhisperer();
 
-// Load a GGML model file (e.g. ggml-tiny.bin, ggml-base.bin) downloaded to device storage
-whisperer.initModel("/path/to/ggml-base.bin");
+// Initialize with the default model (WhisperModel.TINY) extracted automatically from assets
+whisperer.init(context);
+
+// Or check availability and initialize with a specific model enum
+if (AndroidWhisperer.isModelAvailable(context, WhisperModel.TINY)) {
+    whisperer.init(context, WhisperModel.TINY);
+}
 ```
 
 ### 2. Prepare Audio Samples

@@ -71,8 +71,45 @@ public final class AndroidWhisperer implements Closeable {
         this.nativeApi = nativeApi;
     }
 
-    /** Initializes or replaces the current model context. */
-    public synchronized void initModel(String modelPath) {
+    /**
+     * Initializes the engine with the default model ({@link WhisperModel#TINY}).
+     *
+     * @param context the Android application context
+     * @throws IOException if extracting the model asset fails
+     * @throws WhisperModelNotAvailable if the model is not available
+     */
+    public synchronized void init(Context context) throws IOException {
+        init(context, WhisperModel.TINY);
+    }
+
+    /**
+     * Initializes the engine with a specified {@link WhisperModel}.
+     * The default model is used if {@code model} is null.
+     *
+     * @param context the Android application context
+     * @param model the Whisper model enum value
+     * @throws IOException if extracting the model asset fails
+     * @throws WhisperModelNotAvailable if the model is not available or not supported
+     */
+    public synchronized void init(Context context, WhisperModel model) throws IOException {
+        ensureOpen();
+        WhisperModel resolvedModel = (model == null) ? WhisperModel.TINY : model;
+        if (!ModelManager.isModelAvailable(context, resolvedModel)) {
+            throw new WhisperModelNotAvailable("Model not available: " + resolvedModel);
+        }
+        File modelFile = ModelManager.ensureModel(context, resolvedModel);
+        initModelFromFile(modelFile);
+    }
+
+    /**
+     * Checks whether the specified Whisper model is available.
+     */
+    public static boolean isModelAvailable(Context context, WhisperModel model) {
+        return ModelManager.isModelAvailable(context, model);
+    }
+
+    /** Initializes or replaces the current model context using a file path. */
+    private synchronized void initModel(String modelPath) {
         ensureOpen();
 
         if (modelPath == null || modelPath.trim().isEmpty()) {
