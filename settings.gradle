@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "AndroidWhisperer"
 include(":androidwhisperer")
+include(":androidwhispererdemo")
