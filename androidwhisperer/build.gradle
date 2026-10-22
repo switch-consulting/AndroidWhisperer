@@ -25,7 +25,7 @@ android {
 
     sourceSets {
         main {
-            jniLibs.srcDirs = ['src/main/jniLibs']
+            jniLibs.srcDirs = ['src/main/jniLibs', layout.buildDirectory.dir("generated/jniLibs").get().asFile]
         }
     }
 
@@ -55,6 +55,51 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+}
+
+tasks.register('extractJnaNatives') {
+    description = 'Extracts and maps libjnidispatch.so from JNA dependency into build/generated/jniLibs'
+    group = 'build'
+    notCompatibleWithConfigurationCache("One-time extraction")
+
+    outputs.dir(layout.buildDirectory.dir("generated/jniLibs"))
+
+    doLast {
+        def gradleUserHome = gradle.getGradleUserHomeDir().absolutePath
+        def jnaJarFile = file("${gradleUserHome}/caches/modules-2/files-2.1/net.java.dev.jna/jna/5.19.1/ca303052cd617c1af2e2c8d344c98a706fb63143/jna-5.19.1.jar")
+        if (!jnaJarFile.exists()) {
+            throw new GradleException("JNA jar not found at ${jnaJarFile.absolutePath}")
+        }
+        logger.lifecycle("Using JNA jar: ${jnaJarFile.absolutePath}")
+
+        def mapping = [
+            'linux-aarch64/libjnidispatch.so': 'arm64-v8a',
+            'linux-arm/libjnidispatch.so': 'armeabi-v7a',
+            'linux-x86-64/libjnidispatch.so': 'x86_64',
+            'linux-x86/libjnidispatch.so': 'x86'
+        ]
+
+        def generatedJniLibsDir = layout.buildDirectory.dir("generated/jniLibs").get().asFile
+
+        java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jnaJarFile)
+        zip.entries().each { entry ->
+            def name = entry.name.replace('\\', '/')
+            mapping.each { jnaPath, androidAbi ->
+                if (name.contains(jnaPath)) {
+                    def targetDir = new File(generatedJniLibsDir, androidAbi)
+                    targetDir.mkdirs()
+                    def targetSo = new File(targetDir, "libjnidispatch.so")
+                    targetSo.bytes = zip.getInputStream(entry).bytes
+                    logger.lifecycle("Extracted ${jnaPath} to ${targetSo.absolutePath}")
+                }
+            }
+        }
+        zip.close()
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn('extractJnaNatives')
 }
 
 tasks.register('downloadWhisperModel') {
@@ -89,7 +134,7 @@ tasks.register('downloadWhisperModel') {
         def downloadUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${fileName}"
         logger.lifecycle("Downloading Whisper model '${variant}' from ${downloadUrl}...")
 
-        ant.get(src: downloadUrl, dest: targetFile, skipexisting: false)
+        ant.get(src: downloadUrl, dest: targetFile, skipexistic: false)
         logger.lifecycle("Successfully downloaded ${fileName} (${targetFile.length()} bytes)")
     }
 }
