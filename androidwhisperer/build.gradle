@@ -12,7 +12,7 @@ android {
         consumerProguardFiles 'consumer-rules.pro'
 
         ndk {
-            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
         }
 
         externalNativeBuild {
@@ -20,12 +20,6 @@ android {
                 arguments "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384",
                           "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
             }
-        }
-    }
-
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['src/main/jniLibs', layout.buildDirectory.dir("generated/jniLibs").get().asFile]
         }
     }
 
@@ -49,57 +43,12 @@ android {
 }
 
 dependencies {
-    implementation 'net.java.dev.jna:jna:5.19.1'
+    implementation 'net.java.dev.jna:jna:5.19.1@aar'
     implementation libs.appcompat
     implementation libs.material
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
-}
-
-tasks.register('extractJnaNatives') {
-    description = 'Extracts and maps libjnidispatch.so from JNA dependency into build/generated/jniLibs'
-    group = 'build'
-    notCompatibleWithConfigurationCache("One-time extraction")
-
-    outputs.dir(layout.buildDirectory.dir("generated/jniLibs"))
-
-    doLast {
-        def gradleUserHome = gradle.getGradleUserHomeDir().absolutePath
-        def jnaJarFile = file("${gradleUserHome}/caches/modules-2/files-2.1/net.java.dev.jna/jna/5.19.1/ca303052cd617c1af2e2c8d344c98a706fb63143/jna-5.19.1.jar")
-        if (!jnaJarFile.exists()) {
-            throw new GradleException("JNA jar not found at ${jnaJarFile.absolutePath}")
-        }
-        logger.lifecycle("Using JNA jar: ${jnaJarFile.absolutePath}")
-
-        def mapping = [
-            'linux-aarch64/libjnidispatch.so': 'arm64-v8a',
-            'linux-arm/libjnidispatch.so': 'armeabi-v7a',
-            'linux-x86-64/libjnidispatch.so': 'x86_64',
-            'linux-x86/libjnidispatch.so': 'x86'
-        ]
-
-        def generatedJniLibsDir = layout.buildDirectory.dir("generated/jniLibs").get().asFile
-
-        java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jnaJarFile)
-        zip.entries().each { entry ->
-            def name = entry.name.replace('\\', '/')
-            mapping.each { jnaPath, androidAbi ->
-                if (name.contains(jnaPath)) {
-                    def targetDir = new File(generatedJniLibsDir, androidAbi)
-                    targetDir.mkdirs()
-                    def targetSo = new File(targetDir, "libjnidispatch.so")
-                    targetSo.bytes = zip.getInputStream(entry).bytes
-                    logger.lifecycle("Extracted ${jnaPath} to ${targetSo.absolutePath}")
-                }
-            }
-        }
-        zip.close()
-    }
-}
-
-tasks.named('preBuild').configure {
-    dependsOn('extractJnaNatives')
 }
 
 tasks.register('downloadWhisperModel') {
