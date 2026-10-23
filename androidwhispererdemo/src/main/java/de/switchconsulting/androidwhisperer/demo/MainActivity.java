@@ -3,7 +3,6 @@ package de.switchconsulting.androidwhisperer.demo;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,14 +40,11 @@ public class MainActivity extends AppCompatActivity {
 
         audioRecorder = new AudioRecorder();
 
-        btnRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!isRecording) {
-                    checkPermissionAndStartRecording();
-                } else {
-                    stopRecordingAndTranscribe();
-                }
+        btnRecord.setOnClickListener(v -> {
+            if (!isRecording) {
+                checkPermissionAndStartRecording();
+            } else {
+                stopRecordingAndTranscribe();
             }
         });
     }
@@ -105,49 +101,53 @@ public class MainActivity extends AppCompatActivity {
 
         TranscriptionManager.transcribeAudio(this, pcmFile, new TranscriptionManager.TranscriptionCallback() {
             @Override
+            public void onNewSegment(final SegmentResult segment, final String accumulatedTranscript) {
+                runOnUiThread(() -> tvResults.setText("--- Live Transcription ---\n" + accumulatedTranscript));
+            }
+
+            @Override
+            public void onProgress(final int progressPercent) {
+                runOnUiThread(() -> tvStatus.setText("Transcribing... " + progressPercent + "%"));
+            }
+
+            @Override
             public void onSuccess(final TranscriptionResult result) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        tvStatus.setText(R.string.status_ready);
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("--- Transcription Text ---\n");
-                        sb.append(result.getText()).append("\n\n");
+                runOnUiThread(() -> {
+                    tvStatus.setText(R.string.status_ready);
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("--- Transcription Text ---\n");
+                    sb.append(result.getText()).append("\n\n");
 
-                        sb.append("--- Segments ---\n");
-                        List<SegmentResult> segments = result.getSegments();
-                        if (segments != null) {
-                            for (SegmentResult seg : segments) {
-                                sb.append("[").append(seg.getStartMs()).append("ms - ").append(seg.getEndMs()).append("ms]: ")
-                                  .append(seg.getText()).append("\n");
-                            }
+                    sb.append("--- Segments ---\n");
+                    List<SegmentResult> segments = result.getSegments();
+                    if (segments != null) {
+                        for (SegmentResult seg : segments) {
+                            sb.append("[").append(seg.getStartMs()).append("ms - ").append(seg.getEndMs()).append("ms]: ")
+                              .append(seg.getText()).append("\n");
                         }
-
-                        sb.append("\n--- Pause Segments ---\n");
-                        List<PauseSegment> pauses = result.getPauses();
-                        if (pauses != null && !pauses.isEmpty()) {
-                            for (PauseSegment pause : pauses) {
-                                sb.append("Pause: ").append(pause.getDurationMs()).append("ms at ")
-                                  .append(pause.getStartMs()).append("ms\n");
-                            }
-                        } else {
-                            sb.append("No significant pauses detected.\n");
-                        }
-
-                        tvResults.setText(sb.toString());
                     }
+
+                    sb.append("\n--- Pause Segments ---\n");
+                    List<PauseSegment> pauses = result.getPauses();
+                    if (pauses != null && !pauses.isEmpty()) {
+                        for (PauseSegment pause : pauses) {
+                            sb.append("Pause: ").append(pause.getDurationMs()).append("ms at ")
+                              .append(pause.getStartMs()).append("ms\n");
+                        }
+                    } else {
+                        sb.append("No significant pauses detected.\n");
+                    }
+
+                    tvResults.setText(sb.toString());
                 });
             }
 
             @Override
             public void onError(final Exception e) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        tvStatus.setText(R.string.status_ready);
-                        tvResults.setText("Error during transcription:\n" + e.getMessage());
-                        Toast.makeText(MainActivity.this, "Transcription error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
+                runOnUiThread(() -> {
+                    tvStatus.setText(R.string.status_ready);
+                    tvResults.setText("Error during transcription:\n" + e.getMessage());
+                    Toast.makeText(MainActivity.this, "Transcription error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
             }
         });

@@ -11,6 +11,59 @@
 
 extern "C" {
 
+typedef void (*whisper_bridge_segment_cb)(
+        int segment_index,
+        const char * text,
+        int64_t t0_ms,
+        int64_t t1_ms,
+        void * user_data);
+
+typedef void (*whisper_bridge_progress_cb)(
+        int progress_percent,
+        void * user_data);
+
+struct whisper_bridge_callback_data {
+    whisper_bridge_segment_cb segment_cb;
+    whisper_bridge_progress_cb progress_cb;
+    void * user_data;
+};
+
+static void bridge_native_new_segment_cb(
+        struct whisper_context * ctx,
+        struct whisper_state * /*state*/,
+        int n_new,
+        void * user_data) {
+    auto * cb_data = static_cast<whisper_bridge_callback_data *>(user_data);
+    if (cb_data == nullptr || cb_data->segment_cb == nullptr || ctx == nullptr) {
+        return;
+    }
+
+    int n_segments = whisper_full_n_segments(ctx);
+    int start_index = n_segments - n_new;
+    if (start_index < 0) {
+        start_index = 0;
+    }
+
+    for (int i = start_index; i < n_segments; ++i) {
+        int64_t t0 = whisper_full_get_segment_t0(ctx, i) * 10L;
+        int64_t t1 = whisper_full_get_segment_t1(ctx, i) * 10L;
+        const char * text = whisper_full_get_segment_text(ctx, i);
+        cb_data->segment_cb(i, text != nullptr ? text : "", t0, t1, cb_data->user_data);
+    }
+}
+
+static void bridge_native_progress_cb(
+        struct whisper_context * /*ctx*/,
+        struct whisper_state * /*state*/,
+        int progress,
+        void * user_data) {
+    auto * cb_data = static_cast<whisper_bridge_callback_data *>(user_data);
+    if (cb_data == nullptr || cb_data->progress_cb == nullptr) {
+        return;
+    }
+    cb_data->progress_cb(progress, cb_data->user_data);
+}
+
 /**
  * Executes transcription inference using default greedy sampling parameters.
  *
@@ -35,6 +88,52 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe(
     params.print_timestamps = false;
     params.print_special    = false;
     params.token_timestamps = token_timestamps != 0;
+
+    return whisper_full(ctx, params, samples, n_samples);
+}
+
+/**
+ * Executes transcription inference with incremental callbacks for new segments and progress.
+ *
+ * @param ctx Valid whisper_context pointer.
+ * @param samples PCM audio sample array (16 kHz, single channel).
+ * @param n_samples Total number of samples.
+ * @param token_timestamps Non-zero to enable token-level timestamp alignment.
+ * @param segment_cb Callback invoked when new text segments are decoded.
+ * @param progress_cb Callback invoked on progress updates (0 to 100).
+ * @param user_data Arbitrary pointer forwarded to callbacks.
+ * @return 0 on success, non-zero on failure.
+ */
+WHISPER_BRIDGE_API int whisper_bridge_transcribe_with_callback(
+        struct whisper_context * ctx,
+        const float * samples,
+        int n_samples,
+        int token_timestamps,
+        whisper_bridge_segment_cb segment_cb,
+        whisper_bridge_progress_cb progress_cb,
+        void * user_data) {
+    if (ctx == nullptr || samples == nullptr || n_samples <= 0) {
+        return -1;
+    }
+
+    struct whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+    params.print_realtime   = false;
+    params.print_progress   = false;
+    params.print_timestamps = false;
+    params.print_special    = false;
+    params.token_timestamps = token_timestamps != 0;
+
+    whisper_bridge_callback_data cb_data = { segment_cb, progress_cb, user_data };
+
+    if (segment_cb != nullptr) {
+        params.new_segment_callback = bridge_native_new_segment_cb;
+        params.new_segment_callback_user_data = &cb_data;
+    }
+
+    if (progress_cb != nullptr) {
+        params.progress_callback = bridge_native_progress_cb;
+        params.progress_callback_user_data = &cb_data;
+    }
 
     return whisper_full(ctx, params, samples, n_samples);
 }

@@ -13,7 +13,9 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Public Java facade for local whisper.cpp transcription.
@@ -31,6 +33,7 @@ public final class AndroidWhisperer implements Closeable {
     }
 
     private final WhisperBridge nativeApi;
+    private final List<TranscriptionListener> listeners = new CopyOnWriteArrayList<>();
     private Pointer context;
     private boolean closed;
 
@@ -44,6 +47,20 @@ public final class AndroidWhisperer implements Closeable {
             throw new IllegalArgumentException("nativeApi == null");
         }
         this.nativeApi = nativeApi;
+    }
+
+    /** Registers a listener for incremental transcription updates. */
+    public void addListener(TranscriptionListener listener) {
+        if (listener != null) {
+            listeners.add(listener);
+        }
+    }
+
+    /** Unregisters a previously added listener. */
+    public void removeListener(TranscriptionListener listener) {
+        if (listener != null) {
+            listeners.remove(listener);
+        }
     }
 
     /**
@@ -174,8 +191,21 @@ public final class AndroidWhisperer implements Closeable {
         boolean tokenMode = options.getPauseMode() == PauseMode.TOKEN
                 || options.getPauseMode() == PauseMode.BOTH;
 
-        int status = nativeApi.whisper_bridge_transcribe(
-                context, samples, samples.length, tokenMode ? 1 : 0);
+        int status;
+        if (listeners.isEmpty()) {
+            // Direct fallback path when no listeners are registered
+            status = nativeApi.whisper_bridge_transcribe(
+                    context, samples, samples.length, tokenMode ? 1 : 0);
+        } else {
+            // Incremental callback path when listeners are registered
+            final StringBuilder liveTranscript = new StringBuilder();
+            WhisperBridge.WhisperSegmentCallback segmentCb = createSegmentCallback(liveTranscript);
+            WhisperBridge.WhisperProgressCallback progressCb = createProgressCallback();
+
+            status = nativeApi.whisper_bridge_transcribe_with_callback(
+                    context, samples, samples.length, tokenMode ? 1 : 0,
+                    segmentCb, progressCb, null);
+        }
 
         if (status != 0) {
             throw new IllegalStateException(
@@ -277,6 +307,34 @@ public final class AndroidWhisperer implements Closeable {
 
         return new TranscriptionResult(
                 transcript.toString().trim(), language, segments, allPauses);
+    }
+
+    private WhisperBridge.WhisperSegmentCallback createSegmentCallback(StringBuilder liveTranscript) {
+        return (segmentIndex, text, t0Ms, t1Ms, userData) -> {
+            String segmentText = safe(text);
+            SegmentResult segment = new SegmentResult(
+                    segmentText, t0Ms, t1Ms, Collections.emptyList());
+
+            synchronized (liveTranscript) {
+                if (liveTranscript.length() > 0) {
+                    liveTranscript.append(' ');
+                }
+                liveTranscript.append(segmentText);
+            }
+
+            String currentText = liveTranscript.toString();
+            for (TranscriptionListener l : listeners) {
+                l.onNewSegment(segment, currentText);
+            }
+        };
+    }
+
+    private WhisperBridge.WhisperProgressCallback createProgressCallback() {
+        return (progressPercent, userData) -> {
+            for (TranscriptionListener l : listeners) {
+                l.onProgress(progressPercent);
+            }
+        };
     }
 
     /**
