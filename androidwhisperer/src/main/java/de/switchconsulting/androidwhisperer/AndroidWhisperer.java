@@ -1,7 +1,6 @@
 package de.switchconsulting.androidwhisperer;
 
 import android.content.Context;
-import android.text.TextUtils;
 
 import com.sun.jna.Pointer;
 
@@ -80,6 +79,7 @@ public final class AndroidWhisperer implements Closeable {
     /**
      * Checks whether the specified Whisper model is available.
      */
+    @SuppressWarnings("unused")
     public static boolean isModelAvailable(Context context, WhisperModel model) {
         return ModelManager.isModelAvailable(context, model);
     }
@@ -114,6 +114,7 @@ public final class AndroidWhisperer implements Closeable {
      * @param assetPath relative path inside assets, e.g. "models/ggml-tiny.bin"
      * @throws IOException if extracting the asset fails
      */
+    @SuppressWarnings("unused")
     public synchronized void initModelFromAsset(Context context, String assetPath)
             throws IOException {
         File modelFile = ModelManager.ensureModelFromAssets(context, assetPath);
@@ -258,7 +259,7 @@ public final class AndroidWhisperer implements Closeable {
             segments.add(new SegmentResult(
                     text, start, end, segmentPauses));
 
-            if (!TextUtils.isEmpty(transcript.toString())) {
+            if (transcript.length() > 0) {
                 transcript.append(' ');
             }
             transcript.append(text);
@@ -289,6 +290,7 @@ public final class AndroidWhisperer implements Closeable {
         return timestamp * 10L;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static void addPause(
             List<PauseSegment> target,
             long start,

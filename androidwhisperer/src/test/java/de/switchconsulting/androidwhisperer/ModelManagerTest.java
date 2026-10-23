@@ -6,8 +6,14 @@ import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import android.content.Context;
+
+import java.io.File;
 
 public class ModelManagerTest {
 
@@ -63,17 +69,46 @@ public class ModelManagerTest {
         assertEquals("tiny", WhisperModel.TINY.getVariant());
         assertEquals("ggml-tiny.bin", WhisperModel.TINY.getFileName());
         assertEquals("models/ggml-tiny.bin", WhisperModel.TINY.getAssetPath());
-        assertTrue(WhisperModel.TINY.isSupported());
-        assertFalse(WhisperModel.BASE.isSupported());
-    }
+        assertEquals("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin", WhisperModel.TINY.getDownloadUrl());
+        assertTrue(WhisperModel.TINY.isAsset());
 
-    @Test(expected = WhisperModelNotAvailable.class)
-    public void modelManager_ensureModel_throwsOnUnsupportedModel() throws Exception {
-        ModelManager.ensureModel(null, WhisperModel.BASE);
+        assertEquals("base", WhisperModel.BASE.getVariant());
+        assertEquals("ggml-base.bin", WhisperModel.BASE.getFileName());
+        assertNull(WhisperModel.BASE.getAssetPath());
+        assertEquals("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin", WhisperModel.BASE.getDownloadUrl());
+        assertFalse(WhisperModel.BASE.isAsset());
     }
 
     @Test
-    public void modelManager_isModelAvailable_returnsFalseForUnsupported() {
+    public void customWhisperModel_instantiation() {
+        WhisperModel customModel = new WhisperModel("custom", "ggml-custom.bin", null, "https://example.com/ggml-custom.bin");
+
+        assertEquals("custom", customModel.getVariant());
+        assertEquals("ggml-custom.bin", customModel.getFileName());
+        assertNull(customModel.getAssetPath());
+        assertEquals("https://example.com/ggml-custom.bin", customModel.getDownloadUrl());
+        assertFalse(customModel.isAsset());
+        assertNotNull(customModel.getLocalFile(new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        }));
+    }
+
+    @Test(expected = WhisperModelNotAvailable.class)
+    public void modelManager_ensureModel_throwsOnUnavailableModel() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+        ModelManager.ensureModel(mockContext, WhisperModel.BASE);
+    }
+
+    @Test
+    public void modelManager_isModelAvailable_returnsFalseForUnavailable() {
         assertFalse(ModelManager.isModelAvailable(null, WhisperModel.BASE));
         assertFalse(ModelManager.isModelAvailable(null, null));
     }

@@ -28,6 +28,7 @@ public final class ModelManager {
     /**
      * Returns the internal storage directory where model files are saved.
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static File getModelsDir(Context context) {
         if (context == null) {
             throw new IllegalArgumentException("context == null");
@@ -40,39 +41,53 @@ public final class ModelManager {
     }
 
     /**
-     * Checks whether the specified Whisper model is available (supported and present locally or in assets).
+     * Checks whether the specified Whisper model is available (present locally or in assets).
      */
     public static boolean isModelAvailable(Context context, WhisperModel model) {
-        if (context == null || model == null || !model.isSupported()) {
+        if (context == null || model == null) {
             return false;
         }
 
         // Check if model file already exists locally
-        File targetFile = new File(getModelsDir(context), model.getFileName());
-        if (targetFile.exists() && targetFile.length() > 0) {
+        File targetFile = model.getFile(context);
+        if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
             return true;
         }
 
-        // Otherwise check if it can be opened from assets
-        try (InputStream in = context.getAssets().open(model.getAssetPath())) {
-            return true;
-        } catch (IOException e) {
-            return false;
+        // Otherwise check if it can be opened from assets (if isAsset() is true)
+        if (model.isAsset()) {
+            try (InputStream ignored = context.getAssets().open(model.getAssetPath())) {
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
         }
+
+        return false;
     }
 
     /**
      * Ensures the specified Whisper model is available and extracted to internal storage.
-     * Throws {@link WhisperModelNotAvailable} if the model is not supported or unavailable.
+     * Throws {@link WhisperModelNotAvailable} if the model is unavailable.
      */
     public static File ensureModel(Context context, WhisperModel model) throws IOException {
+        if (context == null) {
+            throw new IllegalArgumentException("context == null");
+        }
         if (model == null) {
             throw new IllegalArgumentException("model == null");
         }
-        if (!isModelAvailable(context, model)) {
-            throw new WhisperModelNotAvailable("Model not available or not supported: " + model);
+
+        File targetFile = model.getFile(context);
+        if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
+            return targetFile;
         }
-        return ensureModelFromAssets(context, model.getAssetPath());
+
+        if (model.isAsset()) {
+            return ensureModelFromAssets(context, model.getAssetPath());
+        }
+
+        throw new WhisperModelNotAvailable("Model not available locally or in assets: " + model.getVariant());
     }
 
     /**
@@ -101,6 +116,7 @@ public final class ModelManager {
     /**
      * Copies an asset file to a specified target file.
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void copyAssetToFile(
             Context context, String assetPath, File targetFile) throws IOException {
         if (context == null || targetFile == null) {
@@ -126,6 +142,7 @@ public final class ModelManager {
     /**
      * Returns a list of all model files currently stored in internal storage.
      */
+    @SuppressWarnings("unused")
     public static List<File> listLocalModels(Context context) {
         File dir = getModelsDir(context);
         File[] files = dir.listFiles((d, name) -> name.endsWith(".bin"));
