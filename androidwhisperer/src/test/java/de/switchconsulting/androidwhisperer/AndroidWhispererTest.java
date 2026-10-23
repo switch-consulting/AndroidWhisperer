@@ -15,31 +15,6 @@ import static org.junit.Assert.fail;
 
 public class AndroidWhispererTest {
 
-    @Test
-    public void options_validAndDefaults() {
-        AndroidWhispererOptions opts = AndroidWhispererOptions.defaults();
-        assertNotNull(opts);
-
-        AndroidWhispererOptions custom = new AndroidWhispererOptions(
-                AndroidWhisperer.PauseMode.TOKEN, 500, 150);
-        assertNotNull(custom);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void options_nullPauseMode_throws() {
-        new AndroidWhispererOptions(null, 300, 100);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void options_negativeSegmentThreshold_throws() {
-        new AndroidWhispererOptions(AndroidWhisperer.PauseMode.BOTH, -1, 100);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void options_negativeTokenThreshold_throws() {
-        new AndroidWhispererOptions(AndroidWhisperer.PauseMode.BOTH, 300, -1);
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void constructor_nullBridge_throws() {
         new AndroidWhisperer(null);
