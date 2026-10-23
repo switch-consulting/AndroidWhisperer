@@ -1,6 +1,7 @@
 package de.switchconsulting.androidwhisperer;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.sun.jna.Pointer;
 
@@ -13,7 +14,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,30 +29,6 @@ public final class AndroidWhisperer implements Closeable {
         SEGMENT,
         TOKEN,
         BOTH
-    }
-
-    public static final class Options {
-        private final PauseMode pauseMode;
-        private final long segmentPauseThresholdMs;
-        private final long tokenPauseThresholdMs;
-
-        public Options(
-                PauseMode pauseMode,
-                long segmentPauseThresholdMs,
-                long tokenPauseThresholdMs) {
-            if (pauseMode == null
-                    || segmentPauseThresholdMs < 0
-                    || tokenPauseThresholdMs < 0) {
-                throw new IllegalArgumentException("Invalid options");
-            }
-            this.pauseMode = pauseMode;
-            this.segmentPauseThresholdMs = segmentPauseThresholdMs;
-            this.tokenPauseThresholdMs = tokenPauseThresholdMs;
-        }
-
-        public static Options defaults() {
-            return new Options(PauseMode.BOTH, 300, 100);
-        }
     }
 
     private final WhisperBridge nativeApi;
@@ -178,7 +154,7 @@ public final class AndroidWhisperer implements Closeable {
 
     /** Transcribes audio with the default pause-analysis options. */
     public synchronized TranscriptionResult transcribe(float[] samples) {
-        return transcribe(samples, Options.defaults());
+        return transcribe(samples, AndroidWhispererOptions.defaults());
     }
 
     /**
@@ -186,7 +162,7 @@ public final class AndroidWhisperer implements Closeable {
      * Samples must already be mono float PCM at 16 kHz.
      */
     public synchronized TranscriptionResult transcribe(
-            float[] samples, Options options) {
+            float[] samples, AndroidWhispererOptions options) {
         requireModel();
         validateSamples(samples);
 
@@ -194,8 +170,8 @@ public final class AndroidWhisperer implements Closeable {
             throw new IllegalArgumentException("options == null");
         }
 
-        boolean tokenMode = options.pauseMode == PauseMode.TOKEN
-                || options.pauseMode == PauseMode.BOTH;
+        boolean tokenMode = options.getPauseMode() == PauseMode.TOKEN
+                || options.getPauseMode() == PauseMode.BOTH;
 
         int status = nativeApi.whisper_bridge_transcribe(
                 context, samples, samples.length, tokenMode ? 1 : 0);
@@ -230,11 +206,11 @@ public final class AndroidWhisperer implements Closeable {
             }
 
             // Segment gaps represent larger inter-segment pauses.
-            if ((options.pauseMode == PauseMode.SEGMENT
-                    || options.pauseMode == PauseMode.BOTH)
+            if ((options.getPauseMode() == PauseMode.SEGMENT
+                    || options.getPauseMode() == PauseMode.BOTH)
                     && previousSegmentEnd >= 0 && start >= previousSegmentEnd) {
                 addPause(allPauses, previousSegmentEnd, start,
-                        options.segmentPauseThresholdMs,
+                        options.getSegmentPauseThresholdMs(),
                         PauseSegment.Level.SEGMENT);
             }
 
@@ -267,7 +243,7 @@ public final class AndroidWhisperer implements Closeable {
                             && tokenStart >= previousTokenEnd) {
                         PauseSegment pause = makePause(
                                 previousTokenEnd, tokenStart,
-                                options.tokenPauseThresholdMs,
+                                options.getTokenPauseThresholdMs(),
                                 PauseSegment.Level.TOKEN);
                         if (pause != null) {
                             segmentPauses.add(pause);
@@ -282,7 +258,7 @@ public final class AndroidWhisperer implements Closeable {
             segments.add(new SegmentResult(
                     text, start, end, segmentPauses));
 
-            if (transcript.length() > 0 && !text.isEmpty()) {
+            if (!TextUtils.isEmpty(transcript.toString())) {
                 transcript.append(' ');
             }
             transcript.append(text);

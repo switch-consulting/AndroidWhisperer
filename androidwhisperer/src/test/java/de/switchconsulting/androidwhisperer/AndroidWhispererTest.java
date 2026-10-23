@@ -17,27 +17,27 @@ public class AndroidWhispererTest {
 
     @Test
     public void options_validAndDefaults() {
-        AndroidWhisperer.Options opts = AndroidWhisperer.Options.defaults();
+        AndroidWhispererOptions opts = AndroidWhispererOptions.defaults();
         assertNotNull(opts);
 
-        AndroidWhisperer.Options custom = new AndroidWhisperer.Options(
+        AndroidWhispererOptions custom = new AndroidWhispererOptions(
                 AndroidWhisperer.PauseMode.TOKEN, 500, 150);
         assertNotNull(custom);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void options_nullPauseMode_throws() {
-        new AndroidWhisperer.Options(null, 300, 100);
+        new AndroidWhispererOptions(null, 300, 100);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void options_negativeSegmentThreshold_throws() {
-        new AndroidWhisperer.Options(AndroidWhisperer.PauseMode.BOTH, -1, 100);
+        new AndroidWhispererOptions(AndroidWhisperer.PauseMode.BOTH, -1, 100);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void options_negativeTokenThreshold_throws() {
-        new AndroidWhisperer.Options(AndroidWhisperer.PauseMode.BOTH, 300, -1);
+        new AndroidWhispererOptions(AndroidWhisperer.PauseMode.BOTH, 300, -1);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -119,7 +119,7 @@ public class AndroidWhispererTest {
 
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
-            TranscriptionResult result = w.transcribe(new float[]{0.1f}, AndroidWhisperer.Options.defaults());
+            TranscriptionResult result = w.transcribe(new float[]{0.1f}, AndroidWhispererOptions.defaults());
             assertNotNull(result);
             assertEquals("Hello world", result.getText());
             assertEquals("en", result.getLanguage());
