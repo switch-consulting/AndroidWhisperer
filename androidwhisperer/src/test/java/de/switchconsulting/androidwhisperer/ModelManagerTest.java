@@ -11,9 +11,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import android.content.Context;
-
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class ModelManagerTest {
 
@@ -21,32 +21,41 @@ public class ModelManagerTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void getDownloadUrl_formatsVariantNameCorrectly() {
+    public void whisperModel_defaultDownloadUrl_formatsVariantNameCorrectly() {
+        WhisperModel tinyModel = new WhisperModel("tiny", "ggml-tiny.bin", null);
         assertEquals(
                 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
-                ModelManager.getDownloadUrl("tiny"));
+                tinyModel.getDownloadUrl());
 
+        WhisperModel tinyEnModel = new WhisperModel("tiny.en", "ggml-tiny.en.bin", null);
         assertEquals(
                 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin",
-                ModelManager.getDownloadUrl("tiny.en"));
+                tinyEnModel.getDownloadUrl());
 
+        WhisperModel baseModel = new WhisperModel("ggml-base", "ggml-base.bin", null);
         assertEquals(
                 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-                ModelManager.getDownloadUrl("ggml-base"));
+                baseModel.getDownloadUrl());
 
+        WhisperModel smallModel = new WhisperModel("small.bin", "ggml-small.bin", null);
         assertEquals(
                 "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
-                ModelManager.getDownloadUrl("small.bin"));
+                smallModel.getDownloadUrl());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void getDownloadUrl_throwsOnNull() {
-        ModelManager.getDownloadUrl(null);
+    public void whisperModel_throwsOnNullVariant() {
+        new WhisperModel(null, "file.bin", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void getDownloadUrl_throwsOnEmpty() {
-        ModelManager.getDownloadUrl("   ");
+    public void whisperModel_throwsOnEmptyVariant() {
+        new WhisperModel("   ", "file.bin", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void whisperModel_throwsOnNullFileName() {
+        new WhisperModel("variant", null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -96,35 +105,70 @@ public class ModelManagerTest {
         }));
     }
 
-    @Test(expected = WhisperModelNotAvailable.class)
-    public void modelManager_ensureModel_throwsOnUnavailableModel() throws Exception {
+    @Test
+    public void customWhisperModel_withoutExplicitUrl_usesCalculatedDefault() {
+        WhisperModel customModel = new WhisperModel("custom-variant", "ggml-custom.bin", null, null);
+        assertEquals(
+                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-custom-variant.bin",
+                customModel.getDownloadUrl());
+    }
+
+    @Test(expected = IOException.class)
+    public void modelManager_ensureModel_throwsIOExceptionOnFailedDownload() throws Exception {
         android.content.Context mockContext = new android.content.ContextWrapper(null) {
             @Override
             public File getFilesDir() {
                 return temporaryFolder.getRoot();
             }
         };
-        ModelManager.ensureModel(mockContext, WhisperModel.BASE);
+        WhisperModel nonExistentModel = new WhisperModel("nonexistent-variant", "ggml-nonexistent.bin", null);
+        ModelManager.ensureModel(mockContext, nonExistentModel);
     }
 
     @Test
-    public void modelManager_isModelAvailable_returnsFalseForUnavailable() {
-        assertFalse(ModelManager.isModelAvailable(null, WhisperModel.BASE));
-        assertFalse(ModelManager.isModelAvailable(null, null));
+    public void modelManager_ensureModel_returnsExistingLocalFile() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        File modelsDir = ModelManager.getModelsDir(mockContext);
+        File localModel = new File(modelsDir, "ggml-local.bin");
+        try (FileOutputStream out = new FileOutputStream(localModel)) {
+            out.write("fake model data".getBytes());
+        }
+
+        WhisperModel model = new WhisperModel("local", "ggml-local.bin", null, "https://example.com/unused");
+        assertTrue(ModelManager.isModelAvailable(mockContext, model));
+
+        File result = ModelManager.ensureModel(mockContext, model);
+        assertEquals(localModel.getAbsolutePath(), result.getAbsolutePath());
     }
 
-    @Test(expected = WhisperModelNotAvailable.class)
-    public void androidWhisperer_init_throwsOnUnsupportedModel() throws Exception {
-        de.switchconsulting.androidwhisperer.internal.WhisperBridge dummyBridge =
-                (de.switchconsulting.androidwhisperer.internal.WhisperBridge)
-                        java.lang.reflect.Proxy.newProxyInstance(
-                                de.switchconsulting.androidwhisperer.internal.WhisperBridge.class.getClassLoader(),
-                                new Class<?>[]{de.switchconsulting.androidwhisperer.internal.WhisperBridge.class},
-                                (proxy, method, args) -> null);
+    @Test
+    public void modelManager_isModelAvailable_returnsFalseForNullContextOrModel() {
+        assertFalse(ModelManager.isModelAvailable(null, WhisperModel.BASE));
+        assertFalse(ModelManager.isModelAvailable(null, null));
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+        assertFalse(ModelManager.isModelAvailable(mockContext, null));
+    }
 
-        try (AndroidWhisperer whisperer = new AndroidWhisperer(dummyBridge)) {
-            whisperer.init(null, WhisperModel.BASE);
-        }
+    @Test
+    public void modelManager_isModelAvailable_returnsTrueForModelWithDownloadUrl() {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+        assertTrue(ModelManager.isModelAvailable(mockContext, WhisperModel.BASE));
     }
 
     @Test
@@ -142,5 +186,11 @@ public class ModelManagerTest {
         } catch (IllegalArgumentException e) {
             assertEquals("modelFile == null", e.getMessage());
         }
+    }
+
+    @Test(expected = IOException.class)
+    public void downloadModelFromUrl_throwsOnInvalidHost() throws Exception {
+        File targetFile = new File(temporaryFolder.getRoot(), "invalid.bin");
+        ModelManager.downloadModelFromUrl("http://invalid.domain.that.does.not.exist.local/model.bin", targetFile);
     }
 }

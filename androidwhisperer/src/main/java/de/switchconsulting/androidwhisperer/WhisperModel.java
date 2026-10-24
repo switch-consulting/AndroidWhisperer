@@ -22,6 +22,9 @@ public class WhisperModel {
     public static final WhisperModel MEDIUM_EN = new WhisperModel("medium.en", "ggml-medium.en.bin", null);
     public static final WhisperModel LARGE = new WhisperModel("large", "ggml-large.bin", null);
 
+    public static final String HUGGINGFACE_BASE_URL =
+            "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-";
+
     private final String variant;
     private final String fileName;
     private final String assetPath;
@@ -35,7 +38,7 @@ public class WhisperModel {
      * @param assetPath relative path inside app assets if bundled, or null if download-only
      */
     public WhisperModel(String variant, String fileName, String assetPath) {
-        this(variant, fileName, assetPath, ModelManager.getDownloadUrl(variant));
+        this(variant, fileName, assetPath, null);
     }
 
     /**
@@ -58,7 +61,21 @@ public class WhisperModel {
         this.assetPath = (assetPath != null && !assetPath.trim().isEmpty()) ? assetPath.trim() : null;
         this.downloadUrl = (downloadUrl != null && !downloadUrl.trim().isEmpty())
                 ? downloadUrl.trim()
-                : ModelManager.getDownloadUrl(this.variant);
+                : computeDefaultDownloadUrl(this.variant);
+    }
+
+    private static String computeDefaultDownloadUrl(String modelVariant) {
+        if (modelVariant == null || modelVariant.trim().isEmpty()) {
+            throw new IllegalArgumentException("modelVariant is empty");
+        }
+        String normalizedVariant = modelVariant.trim();
+        if (normalizedVariant.startsWith("ggml-")) {
+            normalizedVariant = normalizedVariant.substring(5);
+        }
+        if (normalizedVariant.endsWith(".bin")) {
+            normalizedVariant = normalizedVariant.substring(0, normalizedVariant.length() - 4);
+        }
+        return HUGGINGFACE_BASE_URL + normalizedVariant + ".bin";
     }
 
     public String getVariant() {
