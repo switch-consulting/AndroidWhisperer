@@ -193,4 +193,101 @@ public class ModelManagerTest {
         File targetFile = new File(temporaryFolder.getRoot(), "invalid.bin");
         ModelManager.downloadModelFromUrl("http://invalid.domain.that.does.not.exist.local/model.bin", targetFile);
     }
+
+    @Test
+    public void ensureModelAsync_callsOnSuccessForExistingLocalFile() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        File modelsDir = ModelManager.getModelsDir(mockContext);
+        File localModel = new File(modelsDir, "ggml-local-async.bin");
+        try (FileOutputStream out = new FileOutputStream(localModel)) {
+            out.write("fake model data".getBytes());
+        }
+
+        WhisperModel model = new WhisperModel("local-async", "ggml-local-async.bin", null, "https://example.com/unused");
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<File> resultFile = new java.util.concurrent.atomic.AtomicReference<>();
+
+        ModelManager.ensureModelAsync(mockContext, model, new ModelDownloadListener() {
+            @Override
+            public void onSuccess(File modelFile) {
+                resultFile.set(modelFile);
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Exception error) {
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        assertNotNull(resultFile.get());
+        assertEquals(localModel.getAbsolutePath(), resultFile.get().getAbsolutePath());
+    }
+
+    @Test
+    public void ensureModelAsync_callsOnErrorOnDownloadFailure() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        WhisperModel nonExistentModel = new WhisperModel("invalid-host-model", "ggml-invalid.bin", null, "http://invalid.domain.that.does.not.exist.local/model.bin");
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<Exception> resultError = new java.util.concurrent.atomic.AtomicReference<>();
+
+        ModelManager.ensureModelAsync(mockContext, nonExistentModel, new ModelDownloadListener() {
+            @Override
+            public void onSuccess(File modelFile) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Exception error) {
+                resultError.set(error);
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        assertNotNull(resultError.get());
+    }
+
+    @Test
+    public void downloadModelAsync_callsOnErrorOnFailure() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        WhisperModel invalidModel = new WhisperModel("invalid-host", "ggml-invalid2.bin", null, "http://invalid.domain.that.does.not.exist.local/model.bin");
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicReference<Exception> resultError = new java.util.concurrent.atomic.AtomicReference<>();
+
+        ModelManager.downloadModelAsync(mockContext, invalidModel, new ModelDownloadListener() {
+            @Override
+            public void onSuccess(File modelFile) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Exception error) {
+                resultError.set(error);
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        assertNotNull(resultError.get());
+    }
 }
