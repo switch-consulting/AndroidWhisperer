@@ -103,7 +103,7 @@ public final class ModelManager {
 
         String downloadUrl = model.getDownloadUrl();
         if (downloadUrl != null && !downloadUrl.trim().isEmpty()) {
-            downloadModelFromUrl(downloadUrl, targetFile);
+            downloadModelFromUrl(downloadUrl, targetFile, model.getDownloadSize(), null);
             return targetFile;
         }
 
@@ -120,17 +120,50 @@ public final class ModelManager {
      *
      * @param context the Android context
      * @param model the Whisper model
-     * @param listener callback listener for success or error
+     * @param listener callback listener for progress, success, or error
      */
     public static void ensureModelAsync(
             Context context, WhisperModel model, ModelDownloadListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("listener == null");
         }
+        if (context == null) {
+            listener.onError(new IllegalArgumentException("context == null"));
+            return;
+        }
+        if (model == null) {
+            listener.onError(new IllegalArgumentException("model == null"));
+            return;
+        }
         DOWNLOAD_EXECUTOR.execute(() -> {
             try {
-                File file = ensureModel(context, model);
-                listener.onSuccess(file);
+                File targetFile = model.getFile(context);
+                if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
+                    listener.onSuccess(targetFile);
+                    return;
+                }
+
+                if (model.isAsset()) {
+                    try {
+                        File extractedFile = ensureModelFromAssets(context, model.getAssetPath());
+                        listener.onSuccess(extractedFile);
+                        return;
+                    } catch (IOException e) {
+                        if (model.getDownloadUrl() == null || model.getDownloadUrl().trim().isEmpty()) {
+                            throw e;
+                        }
+                    }
+                }
+
+                String downloadUrl = model.getDownloadUrl();
+                if (downloadUrl != null && !downloadUrl.trim().isEmpty()) {
+                    downloadModelFromUrl(downloadUrl, targetFile, model.getDownloadSize(), listener);
+                    listener.onSuccess(targetFile);
+                    return;
+                }
+
+                throw new WhisperModelNotAvailable(
+                        "Model not available locally, in assets, or via download URL: " + model.getVariant());
             } catch (Exception e) {
                 listener.onError(e);
             }
@@ -142,7 +175,7 @@ public final class ModelManager {
      *
      * @param context the Android context
      * @param model the Whisper model
-     * @param listener callback listener for success or error
+     * @param listener callback listener for progress, success, or error
      */
     public static void downloadModelAsync(
             Context context, WhisperModel model, ModelDownloadListener listener) {
@@ -165,7 +198,7 @@ public final class ModelManager {
                             "Model has no valid download URL: " + model.getVariant());
                 }
                 File targetFile = model.getFile(context);
-                downloadModelFromUrl(downloadUrl, targetFile);
+                downloadModelFromUrl(downloadUrl, targetFile, model.getDownloadSize(), listener);
                 listener.onSuccess(targetFile);
             } catch (Exception e) {
                 listener.onError(e);
@@ -225,8 +258,17 @@ public final class ModelManager {
     /**
      * Downloads a model file from the specified HTTP/HTTPS URL into targetFile.
      */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void downloadModelFromUrl(String urlString, File targetFile) throws IOException {
+        downloadModelFromUrl(urlString, targetFile, -1L, null);
+    }
+
+    /**
+     * Downloads a model file from the specified HTTP/HTTPS URL into targetFile, reporting download progress.
+     */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static void downloadModelFromUrl(
+            String urlString, File targetFile, long expectedSize, ModelDownloadListener listener)
+            throws IOException {
         if (urlString == null || urlString.trim().isEmpty()) {
             throw new IllegalArgumentException("urlString is empty");
         }
@@ -285,12 +327,27 @@ public final class ModelManager {
                 throw new IOException("Too many redirects downloading model from " + urlString);
             }
 
+            String contentLengthHeader = connection.getHeaderField("Content-Length");
+            long contentLength = -1L;
+            if (contentLengthHeader != null) {
+                try {
+                    contentLength = Long.parseLong(contentLengthHeader.trim());
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            long totalBytes = contentLength > 0 ? contentLength : (expectedSize > 0 ? expectedSize : -1L);
+
             try (InputStream in = connection.getInputStream();
                  OutputStream out = new FileOutputStream(tempFile)) {
                 byte[] buffer = new byte[8192];
                 int bytesRead;
+                long bytesDownloaded = 0;
                 while ((bytesRead = in.read(buffer)) != -1) {
                     out.write(buffer, 0, bytesRead);
+                    bytesDownloaded += bytesRead;
+                    if (listener != null) {
+                        listener.onProgress(bytesDownloaded, totalBytes);
+                    }
                 }
                 out.flush();
             }

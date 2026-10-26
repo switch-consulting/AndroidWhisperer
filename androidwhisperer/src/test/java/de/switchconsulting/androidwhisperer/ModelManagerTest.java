@@ -14,48 +14,26 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
 
 public class ModelManagerTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    @Test
-    public void whisperModel_defaultDownloadUrl_formatsVariantNameCorrectly() {
-        WhisperModel tinyModel = new WhisperModel("tiny", "ggml-tiny.bin", null);
-        assertEquals(
-                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin",
-                tinyModel.getDownloadUrl());
-
-        WhisperModel tinyEnModel = new WhisperModel("tiny.en", "ggml-tiny.en.bin", null);
-        assertEquals(
-                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin",
-                tinyEnModel.getDownloadUrl());
-
-        WhisperModel baseModel = new WhisperModel("ggml-base", "ggml-base.bin", null);
-        assertEquals(
-                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-                baseModel.getDownloadUrl());
-
-        WhisperModel smallModel = new WhisperModel("small.bin", "ggml-small.bin", null);
-        assertEquals(
-                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
-                smallModel.getDownloadUrl());
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void whisperModel_throwsOnNullVariant() {
-        new WhisperModel(null, "file.bin", null);
+        new WhisperModel(null, "file.bin", "models/file.bin");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void whisperModel_throwsOnEmptyVariant() {
-        new WhisperModel("   ", "file.bin", null);
+        new WhisperModel("   ", "file.bin", "models/file.bin");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void whisperModel_throwsOnNullFileName() {
-        new WhisperModel("variant", null, null);
+        new WhisperModel("variant", null, "models/file.bin");
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -79,18 +57,63 @@ public class ModelManagerTest {
         assertEquals("ggml-tiny.bin", WhisperModel.TINY.getFileName());
         assertEquals("models/ggml-tiny.bin", WhisperModel.TINY.getAssetPath());
         assertEquals("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin", WhisperModel.TINY.getDownloadUrl());
+        assertEquals(77691713L, WhisperModel.TINY.getDownloadSize());
         assertTrue(WhisperModel.TINY.isAsset());
 
         assertEquals("base", WhisperModel.BASE.getVariant());
         assertEquals("ggml-base.bin", WhisperModel.BASE.getFileName());
         assertNull(WhisperModel.BASE.getAssetPath());
         assertEquals("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin", WhisperModel.BASE.getDownloadUrl());
+        assertEquals(147951465L, WhisperModel.BASE.getDownloadSize());
         assertFalse(WhisperModel.BASE.isAsset());
     }
 
     @Test
-    public void customWhisperModel_instantiation() {
-        WhisperModel customModel = new WhisperModel("custom", "ggml-custom.bin", null, "https://example.com/ggml-custom.bin");
+    public void whisperModel_downloadSizes() throws Exception {
+        assertEquals(77691713L, WhisperModel.TINY.getDownloadSize());
+        assertEquals(77704715L, WhisperModel.TINY_EN.getDownloadSize());
+        assertEquals(147951465L, WhisperModel.BASE.getDownloadSize());
+        assertEquals(147964211L, WhisperModel.BASE_EN.getDownloadSize());
+        assertEquals(487601967L, WhisperModel.SMALL.getDownloadSize());
+        assertEquals(487614201L, WhisperModel.SMALL_EN.getDownloadSize());
+        assertEquals(1533763059L, WhisperModel.MEDIUM.getDownloadSize());
+        assertEquals(1533774781L, WhisperModel.MEDIUM_EN.getDownloadSize());
+        assertEquals(3094623691L, WhisperModel.LARGE.getDownloadSize());
+
+        WhisperModel customModelNoSize = new WhisperModel("custom", "file.bin", URI.create("https://example.com/file.bin").toURL());
+        assertEquals(-1L, customModelNoSize.getDownloadSize());
+
+        WhisperModel customModelWithSize = new WhisperModel("custom", "file.bin", URI.create("https://example.com/file.bin").toURL(), 12345L);
+        assertEquals(12345L, customModelWithSize.getDownloadSize());
+    }
+
+    @Test
+    public void modelDownloadListener_onProgressCallback() {
+        java.util.concurrent.atomic.AtomicLong downloadedBytes = new java.util.concurrent.atomic.AtomicLong(-1);
+        java.util.concurrent.atomic.AtomicLong totalBytesVal = new java.util.concurrent.atomic.AtomicLong(-1);
+
+        ModelDownloadListener listener = new ModelDownloadListener() {
+            @Override
+            public void onProgress(long bytesDownloaded, long totalBytes) {
+                downloadedBytes.set(bytesDownloaded);
+                totalBytesVal.set(totalBytes);
+            }
+
+            @Override
+            public void onSuccess(File modelFile) {}
+
+            @Override
+            public void onError(Exception error) {}
+        };
+
+        listener.onProgress(1000L, 5000L);
+        assertEquals(1000L, downloadedBytes.get());
+        assertEquals(5000L, totalBytesVal.get());
+    }
+
+    @Test
+    public void customWhisperModel_instantiation() throws Exception {
+        WhisperModel customModel = new WhisperModel("custom", "ggml-custom.bin", URI.create("https://example.com/ggml-custom.bin").toURL());
 
         assertEquals("custom", customModel.getVariant());
         assertEquals("ggml-custom.bin", customModel.getFileName());
@@ -106,11 +129,13 @@ public class ModelManagerTest {
     }
 
     @Test
-    public void customWhisperModel_withoutExplicitUrl_usesCalculatedDefault() {
-        WhisperModel customModel = new WhisperModel("custom-variant", "ggml-custom.bin", null, null);
-        assertEquals(
-                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-custom-variant.bin",
-                customModel.getDownloadUrl());
+    public void customWhisperModel_assetInstantiation() {
+        WhisperModel customAssetModel = new WhisperModel("custom-asset", "ggml-custom.bin", "models/ggml-custom.bin");
+
+        assertEquals("custom-asset", customAssetModel.getVariant());
+        assertEquals("ggml-custom.bin", customAssetModel.getFileName());
+        assertEquals("models/ggml-custom.bin", customAssetModel.getAssetPath());
+        assertTrue(customAssetModel.isAsset());
     }
 
     @Test(expected = IOException.class)
@@ -121,7 +146,7 @@ public class ModelManagerTest {
                 return temporaryFolder.getRoot();
             }
         };
-        WhisperModel nonExistentModel = new WhisperModel("nonexistent-variant", "ggml-nonexistent.bin", null);
+        WhisperModel nonExistentModel = new WhisperModel("nonexistent-variant", "ggml-nonexistent.bin", URI.create("http://invalid.domain.that.does.not.exist.local/model.bin").toURL());
         ModelManager.ensureModel(mockContext, nonExistentModel);
     }
 
@@ -140,7 +165,7 @@ public class ModelManagerTest {
             out.write("fake model data".getBytes());
         }
 
-        WhisperModel model = new WhisperModel("local", "ggml-local.bin", null, "https://example.com/unused");
+        WhisperModel model = new WhisperModel("local", "ggml-local.bin", URI.create("https://example.com/unused").toURL());
         assertTrue(ModelManager.isModelAvailable(mockContext, model));
 
         File result = ModelManager.ensureModel(mockContext, model);
@@ -209,7 +234,7 @@ public class ModelManagerTest {
             out.write("fake model data".getBytes());
         }
 
-        WhisperModel model = new WhisperModel("local-async", "ggml-local-async.bin", null, "https://example.com/unused");
+        WhisperModel model = new WhisperModel("local-async", "ggml-local-async.bin", URI.create("https://example.com/unused").toURL());
         java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
         java.util.concurrent.atomic.AtomicReference<File> resultFile = new java.util.concurrent.atomic.AtomicReference<>();
 
@@ -240,7 +265,7 @@ public class ModelManagerTest {
             }
         };
 
-        WhisperModel nonExistentModel = new WhisperModel("invalid-host-model", "ggml-invalid.bin", null, "http://invalid.domain.that.does.not.exist.local/model.bin");
+        WhisperModel nonExistentModel = new WhisperModel("invalid-host-model", "ggml-invalid.bin", URI.create("http://invalid.domain.that.does.not.exist.local/model.bin").toURL());
         java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
         java.util.concurrent.atomic.AtomicReference<Exception> resultError = new java.util.concurrent.atomic.AtomicReference<>();
 
@@ -270,7 +295,7 @@ public class ModelManagerTest {
             }
         };
 
-        WhisperModel invalidModel = new WhisperModel("invalid-host", "ggml-invalid2.bin", null, "http://invalid.domain.that.does.not.exist.local/model.bin");
+        WhisperModel invalidModel = new WhisperModel("invalid-host", "ggml-invalid2.bin", URI.create("http://invalid.domain.that.does.not.exist.local/model.bin").toURL());
         java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
         java.util.concurrent.atomic.AtomicReference<Exception> resultError = new java.util.concurrent.atomic.AtomicReference<>();
 

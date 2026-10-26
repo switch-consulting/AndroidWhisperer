@@ -3,6 +3,8 @@ package de.switchconsulting.androidwhisperer;
 import android.content.Context;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 
 /**
  * Represents a Whisper model configuration.
@@ -11,34 +13,43 @@ import java.io.File;
  */
 public class WhisperModel {
 
-    // Predefined standard models
-    public static final WhisperModel TINY = new WhisperModel("tiny", "ggml-tiny.bin", "models/ggml-tiny.bin");
-    public static final WhisperModel TINY_EN = new WhisperModel("tiny.en", "ggml-tiny.en.bin", null);
-    public static final WhisperModel BASE = new WhisperModel("base", "ggml-base.bin", null);
-    public static final WhisperModel BASE_EN = new WhisperModel("base.en", "ggml-base.en.bin", null);
-    public static final WhisperModel SMALL = new WhisperModel("small", "ggml-small.bin", null);
-    public static final WhisperModel SMALL_EN = new WhisperModel("small.en", "ggml-small.en.bin", null);
-    public static final WhisperModel MEDIUM = new WhisperModel("medium", "ggml-medium.bin", null);
-    public static final WhisperModel MEDIUM_EN = new WhisperModel("medium.en", "ggml-medium.en.bin", null);
-    public static final WhisperModel LARGE = new WhisperModel("large", "ggml-large.bin", null);
-
     public static final String HUGGINGFACE_BASE_URL =
             "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-";
+
+    private static URL createUrl(String variant) {
+        try {
+            return URI.create(HUGGINGFACE_BASE_URL + variant + ".bin").toURL();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid URL for variant: " + variant, e);
+        }
+    }
+
+    // Predefined standard models
+    public static final WhisperModel TINY = new WhisperModel("tiny", "ggml-tiny.bin", "models/ggml-tiny.bin", createUrl("tiny"), 77691713L);
+    public static final WhisperModel TINY_EN = new WhisperModel("tiny.en", "ggml-tiny.en.bin", null, createUrl("tiny.en"), 77704715L);
+    public static final WhisperModel BASE = new WhisperModel("base", "ggml-base.bin", null, createUrl("base"), 147951465L);
+    public static final WhisperModel BASE_EN = new WhisperModel("base.en", "ggml-base.en.bin", null, createUrl("base.en"), 147964211L);
+    public static final WhisperModel SMALL = new WhisperModel("small", "ggml-small.bin", null, createUrl("small"), 487601967L);
+    public static final WhisperModel SMALL_EN = new WhisperModel("small.en", "ggml-small.en.bin", null, createUrl("small.en"), 487614201L);
+    public static final WhisperModel MEDIUM = new WhisperModel("medium", "ggml-medium.bin", null, createUrl("medium"), 1533763059L);
+    public static final WhisperModel MEDIUM_EN = new WhisperModel("medium.en", "ggml-medium.en.bin", null, createUrl("medium.en"), 1533774781L);
+    public static final WhisperModel LARGE = new WhisperModel("large", "ggml-large.bin", null, createUrl("large"), 3094623691L);
 
     private final String variant;
     private final String fileName;
     private final String assetPath;
     private final String downloadUrl;
+    private final long downloadSize;
 
     /**
-     * Constructs a custom Whisper model configuration.
+     * Constructs a custom Whisper model configuration with an asset path.
      *
      * @param variant model variant name (e.g. "tiny", "custom-model")
      * @param fileName file name on device (e.g. "ggml-custom.bin")
-     * @param assetPath relative path inside app assets if bundled, or null if download-only
+     * @param assetPath relative path inside app assets if bundled, or null
      */
     public WhisperModel(String variant, String fileName, String assetPath) {
-        this(variant, fileName, assetPath, null);
+        this(variant, fileName, assetPath, null, -1L);
     }
 
     /**
@@ -46,10 +57,28 @@ public class WhisperModel {
      *
      * @param variant model variant name
      * @param fileName file name on device
-     * @param assetPath relative path inside app assets if bundled, or null
-     * @param downloadUrl direct download URL if not bundled as an asset
+     * @param downloadUrl direct download URL
      */
-    public WhisperModel(String variant, String fileName, String assetPath, String downloadUrl) {
+    public WhisperModel(String variant, String fileName, URL downloadUrl) {
+        this(variant, fileName, null, downloadUrl, -1L);
+    }
+
+    /**
+     * Constructs a custom Whisper model configuration with an explicit download URL and download size.
+     *
+     * @param variant model variant name
+     * @param fileName file name on device
+     * @param downloadUrl direct download URL
+     * @param downloadSize expected download size in bytes, or -1 if unknown
+     */
+    public WhisperModel(String variant, String fileName, URL downloadUrl, long downloadSize) {
+        this(variant, fileName, null, downloadUrl, downloadSize);
+    }
+
+    /**
+     * Internal constructor accepting all configuration fields.
+     */
+    public WhisperModel(String variant, String fileName, String assetPath, URL downloadUrl, long downloadSize) {
         if (variant == null || variant.trim().isEmpty()) {
             throw new IllegalArgumentException("variant is empty");
         }
@@ -59,23 +88,8 @@ public class WhisperModel {
         this.variant = variant.trim();
         this.fileName = fileName.trim();
         this.assetPath = (assetPath != null && !assetPath.trim().isEmpty()) ? assetPath.trim() : null;
-        this.downloadUrl = (downloadUrl != null && !downloadUrl.trim().isEmpty())
-                ? downloadUrl.trim()
-                : computeDefaultDownloadUrl(this.variant);
-    }
-
-    private static String computeDefaultDownloadUrl(String modelVariant) {
-        if (modelVariant == null || modelVariant.trim().isEmpty()) {
-            throw new IllegalArgumentException("modelVariant is empty");
-        }
-        String normalizedVariant = modelVariant.trim();
-        if (normalizedVariant.startsWith("ggml-")) {
-            normalizedVariant = normalizedVariant.substring(5);
-        }
-        if (normalizedVariant.endsWith(".bin")) {
-            normalizedVariant = normalizedVariant.substring(0, normalizedVariant.length() - 4);
-        }
-        return HUGGINGFACE_BASE_URL + normalizedVariant + ".bin";
+        this.downloadUrl = (downloadUrl != null) ? downloadUrl.toString() : null;
+        this.downloadSize = downloadSize > 0 ? downloadSize : -1L;
     }
 
     public String getVariant() {
@@ -92,6 +106,15 @@ public class WhisperModel {
 
     public String getDownloadUrl() {
         return downloadUrl;
+    }
+
+    /**
+     * Returns the expected download size of the model file in bytes, or -1 if unknown.
+     *
+     * @return download size in bytes, or -1 if unknown
+     */
+    public long getDownloadSize() {
+        return downloadSize;
     }
 
     /**
