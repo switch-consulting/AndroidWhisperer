@@ -10,6 +10,7 @@ import de.switchconsulting.androidwhisperer.AndroidWhisperer;
 import de.switchconsulting.androidwhisperer.ModelManager;
 import de.switchconsulting.androidwhisperer.TranscriptionListener;
 import de.switchconsulting.androidwhisperer.WhisperModel;
+import de.switchconsulting.androidwhisperer.WhisperModelNotAvailable;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
@@ -24,11 +25,16 @@ public class TranscriptionManager {
     }
 
     public static void transcribeAudio(final Context context, final File pcmFile, final TranscriptionCallback callback) {
+        transcribeAudio(context, WhisperModel.TINY, pcmFile, callback);
+    }
+
+    public static void transcribeAudio(final Context context, final WhisperModel model, final File pcmFile, final TranscriptionCallback callback) {
         new Thread(() -> {
             AndroidWhisperer whisperer = null;
             try {
-                if (!ModelManager.isModelAvailable(context, WhisperModel.TINY)) {
-                    throw new IOException("Whisper TINY model is not available in assets or local storage. Please add ggml-tiny.bin to assets/models/");
+                WhisperModel selectedModel = (model != null) ? model : WhisperModel.TINY;
+                if (!ModelManager.isModelAvailable(context, selectedModel)) {
+                    throw new WhisperModelNotAvailable("Whisper model '" + selectedModel.getVariant() + "' is not available.");
                 }
 
                 whisperer = new AndroidWhisperer();
@@ -47,7 +53,7 @@ public class TranscriptionManager {
                         }
                     }
                 });
-                whisperer.init(context, WhisperModel.TINY);
+                whisperer.init(context, selectedModel);
 
                 float[] samples = AudioRecorder.convertPcmToFloat(pcmFile);
                 TranscriptionResult result = whisperer.transcribe(samples);

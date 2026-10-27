@@ -101,6 +101,14 @@ public final class AndroidWhisperer implements Closeable {
         return ModelManager.isModelAvailable(context, model);
     }
 
+    /**
+     * Checks whether the specified Whisper model is downloaded locally on device storage or in assets.
+     */
+    @SuppressWarnings("unused")
+    public static boolean isModelDownloaded(Context context, WhisperModel model) {
+        return ModelManager.isModelDownloaded(context, model);
+    }
+
     /** Initializes or replaces the current model context using a file path. */
     private synchronized void initModel(String modelPath) {
         ensureOpen();

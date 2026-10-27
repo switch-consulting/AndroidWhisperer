@@ -3,7 +3,12 @@ package de.switchconsulting.androidwhisperer.demo;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -13,8 +18,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import de.switchconsulting.androidwhisperer.ModelDownloadListener;
+import de.switchconsulting.androidwhisperer.ModelManager;
+import de.switchconsulting.androidwhisperer.WhisperModel;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
@@ -22,10 +32,27 @@ import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 
+    private static final WhisperModel[] AVAILABLE_MODELS = new WhisperModel[]{
+            WhisperModel.TINY,
+            WhisperModel.TINY_EN,
+            WhisperModel.BASE,
+            WhisperModel.BASE_EN,
+            WhisperModel.SMALL,
+            WhisperModel.SMALL_EN,
+            WhisperModel.MEDIUM,
+            WhisperModel.MEDIUM_EN,
+            WhisperModel.LARGE
+    };
+
+    private Spinner spinnerModel;
+    private Button btnDownloadModel;
+    private ProgressBar pbDownload;
+    private TextView tvDownloadProgress;
     private Button btnRecord;
     private TextView tvStatus;
     private TextView tvResults;
 
+    private WhisperModel selectedModel = WhisperModel.TINY;
     private AudioRecorder audioRecorder;
     private boolean isRecording = false;
 
@@ -34,17 +61,146 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        spinnerModel = findViewById(R.id.spinnerModel);
+        btnDownloadModel = findViewById(R.id.btnDownloadModel);
+        pbDownload = findViewById(R.id.pbDownload);
+        tvDownloadProgress = findViewById(R.id.tvDownloadProgress);
         btnRecord = findViewById(R.id.btnRecord);
         tvStatus = findViewById(R.id.tvStatus);
         tvResults = findViewById(R.id.tvResults);
 
         audioRecorder = new AudioRecorder();
 
+        setupSpinner();
+
+        btnDownloadModel.setOnClickListener(v -> downloadSelectedModel());
+
         btnRecord.setOnClickListener(v -> {
             if (!isRecording) {
                 checkPermissionAndStartRecording();
             } else {
                 stopRecordingAndTranscribe();
+            }
+        });
+    }
+
+    private void setupSpinner() {
+        List<String> modelDisplayNames = new ArrayList<>();
+        int defaultPosition = 0;
+
+        for (int i = 0; i < AVAILABLE_MODELS.length; i++) {
+            WhisperModel model = AVAILABLE_MODELS[i];
+            long size = model.getDownloadSize();
+            if (size > 0) {
+                long sizeMb = size / (1024 * 1024);
+                modelDisplayNames.add(model.getVariant() + " (" + sizeMb + " MB)");
+            } else {
+                modelDisplayNames.add(model.getVariant());
+            }
+
+            if (WhisperModel.TINY.equals(model)) {
+                defaultPosition = i;
+            }
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                modelDisplayNames
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerModel.setAdapter(adapter);
+
+        // Tiny should be default
+        spinnerModel.setSelection(defaultPosition);
+
+        spinnerModel.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedModel = AVAILABLE_MODELS[position];
+                checkAndShowModelStatus();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void checkAndShowModelStatus() {
+        if (selectedModel == null) return;
+
+        boolean isDownloaded = ModelManager.isModelDownloaded(this, selectedModel);
+        if (isDownloaded) {
+            btnDownloadModel.setVisibility(View.GONE);
+            pbDownload.setVisibility(View.GONE);
+            tvDownloadProgress.setVisibility(View.GONE);
+            btnRecord.setEnabled(true);
+            tvStatus.setText(R.string.status_ready);
+        } else {
+            btnDownloadModel.setVisibility(View.VISIBLE);
+            btnDownloadModel.setEnabled(true);
+            btnDownloadModel.setText("Download " + selectedModel.getVariant() + " Model");
+            pbDownload.setVisibility(View.GONE);
+            tvDownloadProgress.setVisibility(View.GONE);
+            btnRecord.setEnabled(false);
+            tvStatus.setText("Model '" + selectedModel.getVariant() + "' is not downloaded.");
+        }
+    }
+
+    private void downloadSelectedModel() {
+        if (selectedModel == null) return;
+
+        btnDownloadModel.setEnabled(false);
+        spinnerModel.setEnabled(false);
+        btnRecord.setEnabled(false);
+
+        pbDownload.setVisibility(View.VISIBLE);
+        pbDownload.setIndeterminate(false);
+        pbDownload.setProgress(0);
+
+        tvDownloadProgress.setVisibility(View.VISIBLE);
+        tvDownloadProgress.setText("Starting download...");
+        tvStatus.setText("Downloading " + selectedModel.getVariant() + " model...");
+
+        ModelManager.ensureModelAsync(this, selectedModel, new ModelDownloadListener() {
+            @Override
+            public void onProgress(long bytesDownloaded, long totalBytes) {
+                runOnUiThread(() -> {
+                    if (totalBytes > 0) {
+                        int progress = (int) ((bytesDownloaded * 100) / totalBytes);
+                        pbDownload.setIndeterminate(false);
+                        pbDownload.setProgress(progress);
+                        String downloadedMb = String.format(Locale.US, "%.1f MB", bytesDownloaded / (1024.0 * 1024.0));
+                        String totalMb = String.format(Locale.US, "%.1f MB", totalBytes / (1024.0 * 1024.0));
+                        tvDownloadProgress.setText(progress + "% (" + downloadedMb + " / " + totalMb + ")");
+                    } else {
+                        pbDownload.setIndeterminate(true);
+                        String downloadedMb = String.format(Locale.US, "%.1f MB", bytesDownloaded / (1024.0 * 1024.0));
+                        tvDownloadProgress.setText("Downloaded " + downloadedMb);
+                    }
+                });
+            }
+
+            @Override
+            public void onSuccess(File modelFile) {
+                runOnUiThread(() -> {
+                    spinnerModel.setEnabled(true);
+                    Toast.makeText(MainActivity.this, "Model " + selectedModel.getVariant() + " is ready!", Toast.LENGTH_SHORT).show();
+                    checkAndShowModelStatus();
+                });
+            }
+
+            @Override
+            public void onError(Exception error) {
+                runOnUiThread(() -> {
+                    spinnerModel.setEnabled(true);
+                    btnDownloadModel.setEnabled(true);
+                    pbDownload.setVisibility(View.GONE);
+                    tvDownloadProgress.setText("Download failed: " + error.getMessage());
+                    tvStatus.setText("Download error");
+                    Toast.makeText(MainActivity.this, "Failed to download model: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                });
             }
         });
     }
@@ -78,6 +234,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             audioRecorder.startRecording(getCacheDir());
             isRecording = true;
+            spinnerModel.setEnabled(false);
+            btnDownloadModel.setEnabled(false);
             btnRecord.setText(R.string.stop_recording);
             tvStatus.setText(R.string.status_recording);
             tvResults.setText("Recording audio... Speak now.");
@@ -91,18 +249,19 @@ public class MainActivity extends AppCompatActivity {
         isRecording = false;
         btnRecord.setText(R.string.start_recording);
         tvStatus.setText(R.string.status_transcribing);
-        tvResults.setText("Transcribing recorded audio...");
+        tvResults.setText("Transcribing recorded audio with model '" + selectedModel.getVariant() + "'...");
 
         if (pcmFile == null || !pcmFile.exists() || pcmFile.length() == 0) {
+            spinnerModel.setEnabled(true);
             tvStatus.setText(R.string.status_ready);
             tvResults.setText("Error: No audio recorded.");
             return;
         }
 
-        TranscriptionManager.transcribeAudio(this, pcmFile, new TranscriptionManager.TranscriptionCallback() {
+        TranscriptionManager.transcribeAudio(this, selectedModel, pcmFile, new TranscriptionManager.TranscriptionCallback() {
             @Override
             public void onNewSegment(final SegmentResult segment, final String accumulatedTranscript) {
-                runOnUiThread(() -> tvResults.setText("--- Live Transcription ---\n" + accumulatedTranscript));
+                runOnUiThread(() -> tvResults.setText("--- Live Transcription (" + selectedModel.getVariant() + ") ---\n" + accumulatedTranscript));
             }
 
             @Override
@@ -113,9 +272,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(final TranscriptionResult result) {
                 runOnUiThread(() -> {
+                    spinnerModel.setEnabled(true);
                     tvStatus.setText(R.string.status_ready);
                     StringBuilder sb = new StringBuilder();
-                    sb.append("--- Transcription Text ---\n");
+                    sb.append("--- Transcription Text (").append(selectedModel.getVariant()).append(") ---\n");
                     sb.append(result.getText()).append("\n\n");
 
                     sb.append("--- Segments ---\n");
@@ -123,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
                     if (segments != null) {
                         for (SegmentResult seg : segments) {
                             sb.append("[").append(seg.getStartMs()).append("ms - ").append(seg.getEndMs()).append("ms]: ")
-                              .append(seg.getText()).append("\n");
+                                    .append(seg.getText()).append("\n");
                         }
                     }
 
@@ -132,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
                     if (pauses != null && !pauses.isEmpty()) {
                         for (PauseSegment pause : pauses) {
                             sb.append("Pause: ").append(pause.getDurationMs()).append("ms at ")
-                              .append(pause.getStartMs()).append("ms\n");
+                                    .append(pause.getStartMs()).append("ms\n");
                         }
                     } else {
                         sb.append("No significant pauses detected.\n");
@@ -145,6 +305,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(final Exception e) {
                 runOnUiThread(() -> {
+                    spinnerModel.setEnabled(true);
                     tvStatus.setText(R.string.status_ready);
                     tvResults.setText("Error during transcription:\n" + e.getMessage());
                     Toast.makeText(MainActivity.this, "Transcription error: " + e.getMessage(), Toast.LENGTH_LONG).show();

@@ -73,6 +73,34 @@ public final class ModelManager {
     }
 
     /**
+     * Checks whether the specified Whisper model is already downloaded locally on device storage
+     * or accessible from app assets.
+     *
+     * @param context the Android context
+     * @param model the Whisper model
+     * @return true if the model file is available locally or in assets, false otherwise
+     */
+    public static boolean isModelDownloaded(Context context, WhisperModel model) {
+        if (context == null || model == null) {
+            return false;
+        }
+
+        File targetFile = model.getFile(context);
+        if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
+            return true;
+        }
+
+        if (model.isAsset()) {
+            try (InputStream ignored = context.getAssets().open(model.getAssetPath())) {
+                return true;
+            } catch (IOException ignored) {
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Ensures the specified Whisper model is available locally, extracted from assets,
      * or downloaded to internal storage.
      * Throws {@link WhisperModelNotAvailable} if the model is unavailable and cannot be downloaded.

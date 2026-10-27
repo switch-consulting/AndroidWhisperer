@@ -50,7 +50,7 @@ AndroidWhisperer whisperer = new AndroidWhisperer();
 
 // Initialize with the default model (WhisperModel.TINY) extracted automatically from assets
 whisperer.init(context);
-
+continue
 // Or check availability and initialize with a specific model enum
 if (AndroidWhisperer.isModelAvailable(context, WhisperModel.TINY)) {
     whisperer.init(context, WhisperModel.TINY);

@@ -5,4 +5,6 @@
     <string name="status_ready">Ready</string>
     <string name="status_recording">Recording audio...</string>
     <string name="status_transcribing">Transcribing audio...</string>
+    <string name="label_select_model">Select Whisper Model:</string>
+    <string name="download_model">Download Model</string>
 </resources>
