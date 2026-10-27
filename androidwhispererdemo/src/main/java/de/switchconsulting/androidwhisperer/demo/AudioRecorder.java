@@ -22,13 +22,13 @@ public class AudioRecorder {
     private boolean isRecording = false;
     private File outputFile;
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint({"MissingPermission", "ResultOfMethodCallIgnored"})
     public void startRecording(File outputDir) throws IOException {
         if (isRecording) return;
 
         outputFile = new File(outputDir, "recorded_audio.pcm");
         if (outputFile.exists()) {
-            outputFile.delete();
+            boolean ignored = outputFile.delete();
         }
 
         int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
@@ -51,12 +51,7 @@ public class AudioRecorder {
         audioRecord.startRecording();
         isRecording = true;
 
-        recordingThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                writeAudioDataToFile();
-            }
-        }, "AudioRecorder Thread");
+        recordingThread = new Thread(this::writeAudioDataToFile, "AudioRecorder Thread");
 
         recordingThread.start();
         Log.d(TAG, "Recording started.");
@@ -64,26 +59,16 @@ public class AudioRecorder {
 
     private void writeAudioDataToFile() {
         byte[] data = new byte[512];
-        FileOutputStream os = null;
 
-        try {
-            os = new FileOutputStream(outputFile);
+        try (FileOutputStream os = new FileOutputStream(outputFile)) {
             while (isRecording) {
                 int read = audioRecord.read(data, 0, data.length);
-                if (AudioRecord.ERROR_INVALID_OPERATION != read && AudioRecord.ERROR_BAD_VALUE != read && read > 0) {
+                if (read > 0) {
                     os.write(data, 0, read);
                 }
             }
         } catch (IOException e) {
             Log.e(TAG, "Error writing audio data", e);
-        } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "Error closing output stream", e);
-                }
-            }
         }
     }
 
@@ -114,6 +99,7 @@ public class AudioRecorder {
         return outputFile;
     }
 
+    @SuppressWarnings("unused")
     public boolean isRecording() {
         return isRecording;
     }
@@ -121,18 +107,12 @@ public class AudioRecorder {
     public static float[] convertPcmToFloat(File pcmFile) throws IOException {
         int fileSize = (int) pcmFile.length();
         byte[] pcmBytes = new byte[fileSize];
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(pcmFile);
+        try (FileInputStream fis = new FileInputStream(pcmFile)) {
             int bytesRead = 0;
             while (bytesRead < fileSize) {
                 int read = fis.read(pcmBytes, bytesRead, fileSize - bytesRead);
                 if (read < 0) break;
                 bytesRead += read;
-            }
-        } finally {
-            if (fis != null) {
-                fis.close();
             }
         }
 

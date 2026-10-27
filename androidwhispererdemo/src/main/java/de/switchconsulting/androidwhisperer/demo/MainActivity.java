@@ -140,11 +140,11 @@ public class MainActivity extends AppCompatActivity {
         } else {
             btnDownloadModel.setVisibility(View.VISIBLE);
             btnDownloadModel.setEnabled(true);
-            btnDownloadModel.setText("Download " + selectedModel.getVariant() + " Model");
+            btnDownloadModel.setText(getString(R.string.btn_download_model_variant, selectedModel.getVariant()));
             pbDownload.setVisibility(View.GONE);
             tvDownloadProgress.setVisibility(View.GONE);
             btnRecord.setEnabled(false);
-            tvStatus.setText("Model '" + selectedModel.getVariant() + "' is not downloaded.");
+            tvStatus.setText(getString(R.string.status_model_not_downloaded, selectedModel.getVariant()));
         }
     }
 
@@ -160,8 +160,8 @@ public class MainActivity extends AppCompatActivity {
         pbDownload.setProgress(0);
 
         tvDownloadProgress.setVisibility(View.VISIBLE);
-        tvDownloadProgress.setText("Starting download...");
-        tvStatus.setText("Downloading " + selectedModel.getVariant() + " model...");
+        tvDownloadProgress.setText(R.string.download_starting);
+        tvStatus.setText(getString(R.string.status_downloading_model, selectedModel.getVariant()));
 
         ModelManager.ensureModelAsync(this, selectedModel, new ModelDownloadListener() {
             @Override
@@ -173,11 +173,11 @@ public class MainActivity extends AppCompatActivity {
                         pbDownload.setProgress(progress);
                         String downloadedMb = String.format(Locale.US, "%.1f MB", bytesDownloaded / (1024.0 * 1024.0));
                         String totalMb = String.format(Locale.US, "%.1f MB", totalBytes / (1024.0 * 1024.0));
-                        tvDownloadProgress.setText(progress + "% (" + downloadedMb + " / " + totalMb + ")");
+                        tvDownloadProgress.setText(getString(R.string.download_progress_known, progress, downloadedMb, totalMb));
                     } else {
                         pbDownload.setIndeterminate(true);
                         String downloadedMb = String.format(Locale.US, "%.1f MB", bytesDownloaded / (1024.0 * 1024.0));
-                        tvDownloadProgress.setText("Downloaded " + downloadedMb);
+                        tvDownloadProgress.setText(getString(R.string.download_progress_unknown, downloadedMb));
                     }
                 });
             }
@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(File modelFile) {
                 runOnUiThread(() -> {
                     spinnerModel.setEnabled(true);
-                    Toast.makeText(MainActivity.this, "Model " + selectedModel.getVariant() + " is ready!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, getString(R.string.download_model_ready, selectedModel.getVariant()), Toast.LENGTH_SHORT).show();
                     checkAndShowModelStatus();
                 });
             }
@@ -197,9 +197,10 @@ public class MainActivity extends AppCompatActivity {
                     spinnerModel.setEnabled(true);
                     btnDownloadModel.setEnabled(true);
                     pbDownload.setVisibility(View.GONE);
-                    tvDownloadProgress.setText("Download failed: " + error.getMessage());
-                    tvStatus.setText("Download error");
-                    Toast.makeText(MainActivity.this, "Failed to download model: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    String errorMsg = error != null ? error.getMessage() : "";
+                    tvDownloadProgress.setText(getString(R.string.download_failed, errorMsg));
+                    tvStatus.setText(R.string.status_download_error);
+                    Toast.makeText(MainActivity.this, getString(R.string.download_model_failed, errorMsg), Toast.LENGTH_LONG).show();
                 });
             }
         });
@@ -225,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startRecording();
             } else {
-                Toast.makeText(this, "Microphone permission is required to record audio.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.permission_mic_required, Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -238,9 +239,9 @@ public class MainActivity extends AppCompatActivity {
             btnDownloadModel.setEnabled(false);
             btnRecord.setText(R.string.stop_recording);
             tvStatus.setText(R.string.status_recording);
-            tvResults.setText("Recording audio... Speak now.");
+            tvResults.setText(R.string.recording_audio_speak_now);
         } catch (Exception e) {
-            Toast.makeText(this, "Failed to start recording: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.recording_failed, e.getMessage()), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -249,24 +250,24 @@ public class MainActivity extends AppCompatActivity {
         isRecording = false;
         btnRecord.setText(R.string.start_recording);
         tvStatus.setText(R.string.status_transcribing);
-        tvResults.setText("Transcribing recorded audio with model '" + selectedModel.getVariant() + "'...");
+        tvResults.setText(getString(R.string.transcribing_audio_with_model, selectedModel.getVariant()));
 
         if (pcmFile == null || !pcmFile.exists() || pcmFile.length() == 0) {
             spinnerModel.setEnabled(true);
             tvStatus.setText(R.string.status_ready);
-            tvResults.setText("Error: No audio recorded.");
+            tvResults.setText(R.string.error_no_audio_recorded);
             return;
         }
 
         TranscriptionManager.transcribeAudio(this, selectedModel, pcmFile, new TranscriptionManager.TranscriptionCallback() {
             @Override
             public void onNewSegment(final SegmentResult segment, final String accumulatedTranscript) {
-                runOnUiThread(() -> tvResults.setText("--- Live Transcription (" + selectedModel.getVariant() + ") ---\n" + accumulatedTranscript));
+                runOnUiThread(() -> tvResults.setText(getString(R.string.live_transcription_header, selectedModel.getVariant(), accumulatedTranscript)));
             }
 
             @Override
             public void onProgress(final int progressPercent) {
-                runOnUiThread(() -> tvStatus.setText("Transcribing... " + progressPercent + "%"));
+                runOnUiThread(() -> tvStatus.setText(getString(R.string.status_transcribing_percent, progressPercent)));
             }
 
             @Override
@@ -307,8 +308,9 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     spinnerModel.setEnabled(true);
                     tvStatus.setText(R.string.status_ready);
-                    tvResults.setText("Error during transcription:\n" + e.getMessage());
-                    Toast.makeText(MainActivity.this, "Transcription error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    String errorMsg = e != null ? e.getMessage() : "";
+                    tvResults.setText(getString(R.string.error_during_transcription, errorMsg));
+                    Toast.makeText(MainActivity.this, getString(R.string.transcription_error_toast, errorMsg), Toast.LENGTH_LONG).show();
                 });
             }
         });

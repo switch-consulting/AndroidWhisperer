@@ -4,7 +4,6 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.File;
-import java.io.IOException;
 
 import de.switchconsulting.androidwhisperer.AndroidWhisperer;
 import de.switchconsulting.androidwhisperer.ModelManager;
@@ -24,20 +23,22 @@ public class TranscriptionManager {
         void onError(Exception e);
     }
 
+    @SuppressWarnings("unused")
     public static void transcribeAudio(final Context context, final File pcmFile, final TranscriptionCallback callback) {
         transcribeAudio(context, WhisperModel.TINY, pcmFile, callback);
     }
 
     public static void transcribeAudio(final Context context, final WhisperModel model, final File pcmFile, final TranscriptionCallback callback) {
         new Thread(() -> {
-            AndroidWhisperer whisperer = null;
-            try {
-                WhisperModel selectedModel = (model != null) ? model : WhisperModel.TINY;
-                if (!ModelManager.isModelAvailable(context, selectedModel)) {
-                    throw new WhisperModelNotAvailable("Whisper model '" + selectedModel.getVariant() + "' is not available.");
+            WhisperModel selectedModel = (model != null) ? model : WhisperModel.TINY;
+            if (!ModelManager.isModelAvailable(context, selectedModel)) {
+                if (callback != null) {
+                    callback.onError(new WhisperModelNotAvailable("Whisper model '" + selectedModel.getVariant() + "' is not available."));
                 }
+                return;
+            }
 
-                whisperer = new AndroidWhisperer();
+            try (AndroidWhisperer whisperer = new AndroidWhisperer()) {
                 whisperer.addListener(new TranscriptionListener() {
                     @Override
                     public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
@@ -58,17 +59,13 @@ public class TranscriptionManager {
                 float[] samples = AudioRecorder.convertPcmToFloat(pcmFile);
                 TranscriptionResult result = whisperer.transcribe(samples);
 
-                callback.onSuccess(result);
+                if (callback != null) {
+                    callback.onSuccess(result);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Transcription failed", e);
-                callback.onError(e);
-            } finally {
-                if (whisperer != null) {
-                    try {
-                        whisperer.close();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error closing whisperer", e);
-                    }
+                if (callback != null) {
+                    callback.onError(e);
                 }
             }
         }, "Transcription Worker Thread").start();

@@ -5,6 +5,28 @@
     <string name="status_ready">Ready</string>
     <string name="status_recording">Recording audio...</string>
     <string name="status_transcribing">Transcribing audio...</string>
+    <string name="status_transcribing_percent">Transcribing... %1$d%%</string>
+    <string name="status_model_not_downloaded">Model \'%1$s\' is not downloaded.</string>
+    <string name="status_downloading_model">Downloading %1$s model...</string>
+    <string name="status_download_error">Download error</string>
+
     <string name="label_select_model">Select Whisper Model:</string>
     <string name="download_model">Download Model</string>
+    <string name="btn_download_model_variant">Download %1$s Model</string>
+
+    <string name="download_starting">Starting download...</string>
+    <string name="download_progress_known">%1$d%% (%2$s / %3$s)</string>
+    <string name="download_progress_unknown">Downloaded %1$s</string>
+    <string name="download_failed">Download failed: %1$s</string>
+    <string name="download_model_ready">Model %1$s is ready!</string>
+    <string name="download_model_failed">Failed to download model: %1$s</string>
+
+    <string name="permission_mic_required">Microphone permission is required to record audio.</string>
+    <string name="recording_audio_speak_now">Recording audio... Speak now.</string>
+    <string name="recording_failed">Failed to start recording: %1$s</string>
+    <string name="transcribing_audio_with_model">Transcribing recorded audio with model \'%1$s\'...</string>
+    <string name="error_no_audio_recorded">Error: No audio recorded.</string>
+    <string name="live_transcription_header">--- Live Transcription (%1$s) ---\n%2$s</string>
+    <string name="error_during_transcription">Error during transcription:\n%1$s</string>
+    <string name="transcription_error_toast">Transcription error: %1$s</string>
 </resources>
