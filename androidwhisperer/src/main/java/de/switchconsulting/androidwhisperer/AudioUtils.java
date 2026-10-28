@@ -50,8 +50,8 @@ public final class AudioUtils {
         }
 
         if (bytes.length < 44 ||
-                !ascii(bytes, 0, "RIFF") ||
-                !ascii(bytes, 8, "WAVE")) {
+                notEqualsAscii(bytes, 0, "RIFF") ||
+                notEqualsAscii(bytes, 8, "WAVE")) {
             throw new IOException("Invalid RIFF/WAVE file");
         }
 
@@ -107,12 +107,12 @@ public final class AudioUtils {
         return fromPcm16(pcm, sampleRate, channels);
     }
 
-    private static boolean ascii(byte[] b, int offset, String text) {
-        if (offset + text.length() > b.length) return false;
+    private static boolean notEqualsAscii(byte[] b, int offset, String text) {
+        if (offset + text.length() > b.length) return true;
         for (int i = 0; i < text.length(); i++) {
-            if (b[offset + i] != (byte) text.charAt(i)) return false;
+            if (b[offset + i] != (byte) text.charAt(i)) return true;
         }
-        return true;
+        return false;
     }
 
     /**

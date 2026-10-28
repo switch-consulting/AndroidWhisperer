@@ -32,7 +32,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import de.switchconsulting.androidwhisperer.demo.TranscriptionCallback;
 
 import java.io.File;
 import java.util.ArrayList;
