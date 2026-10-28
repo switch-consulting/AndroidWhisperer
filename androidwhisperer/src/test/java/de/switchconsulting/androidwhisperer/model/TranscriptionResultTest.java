@@ -28,7 +28,7 @@ public class TranscriptionResultTest {
     @Test
     public void transcriptionResult_valid() {
         SegmentResult seg = new SegmentResult("Hi", 0, 100, Collections.emptyList());
-        PauseSegment pause = new PauseSegment(100, 200, PauseSegment.Level.SEGMENT);
+        PauseSegment pause = new PauseSegment(100, 200, PauseLevel.SEGMENT);
         TranscriptionResult tr = new TranscriptionResult("Hi", "en", Collections.singletonList(seg), Collections.singletonList(pause));
 
         assertEquals("Hi", tr.getText());

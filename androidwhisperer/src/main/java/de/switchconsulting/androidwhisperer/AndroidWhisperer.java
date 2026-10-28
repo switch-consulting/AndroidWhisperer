@@ -21,6 +21,9 @@ import android.content.Context;
 import com.sun.jna.Pointer;
 
 import de.switchconsulting.androidwhisperer.internal.WhisperBridge;
+import de.switchconsulting.androidwhisperer.internal.WhisperProgressCallback;
+import de.switchconsulting.androidwhisperer.internal.WhisperSegmentCallback;
+import de.switchconsulting.androidwhisperer.model.PauseLevel;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
@@ -40,13 +43,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * from a worker thread, not Android's main thread.
  */
 public final class AndroidWhisperer implements Closeable {
-
-    public enum PauseMode {
-        NONE,
-        SEGMENT,
-        TOKEN,
-        BOTH
-    }
 
     private final WhisperBridge nativeApi;
     private final List<TranscriptionListener> listeners = new CopyOnWriteArrayList<>();
@@ -223,8 +219,8 @@ public final class AndroidWhisperer implements Closeable {
         } else {
             // Incremental callback path when listeners are registered
             final StringBuilder liveTranscript = new StringBuilder();
-            WhisperBridge.WhisperSegmentCallback segmentCb = createSegmentCallback(liveTranscript);
-            WhisperBridge.WhisperProgressCallback progressCb = createProgressCallback();
+            WhisperSegmentCallback segmentCb = createSegmentCallback(liveTranscript);
+            WhisperProgressCallback progressCb = createProgressCallback();
 
             status = nativeApi.whisper_bridge_transcribe_with_callback(
                     context, samples, samples.length, tokenMode ? 1 : 0,
@@ -266,7 +262,7 @@ public final class AndroidWhisperer implements Closeable {
                     && previousSegmentEnd >= 0 && start >= previousSegmentEnd) {
                 addPause(allPauses, previousSegmentEnd, start,
                         options.getSegmentPauseThresholdMs(),
-                        PauseSegment.Level.SEGMENT);
+                        PauseLevel.SEGMENT);
             }
 
             List<PauseSegment> segmentPauses = new ArrayList<>();
@@ -299,7 +295,7 @@ public final class AndroidWhisperer implements Closeable {
                         PauseSegment pause = makePause(
                                 previousTokenEnd, tokenStart,
                                 options.getTokenPauseThresholdMs(),
-                                PauseSegment.Level.TOKEN);
+                                PauseLevel.TOKEN);
                         if (pause != null) {
                             segmentPauses.add(pause);
                             allPauses.add(pause);
@@ -333,7 +329,7 @@ public final class AndroidWhisperer implements Closeable {
                 transcript.toString().trim(), language, segments, allPauses);
     }
 
-    private WhisperBridge.WhisperSegmentCallback createSegmentCallback(StringBuilder liveTranscript) {
+    private WhisperSegmentCallback createSegmentCallback(StringBuilder liveTranscript) {
         return (segmentIndex, text, t0Ms, t1Ms, userData) -> {
             String segmentText = safe(text);
             SegmentResult segment = new SegmentResult(
@@ -353,7 +349,7 @@ public final class AndroidWhisperer implements Closeable {
         };
     }
 
-    private WhisperBridge.WhisperProgressCallback createProgressCallback() {
+    private WhisperProgressCallback createProgressCallback() {
         return (progressPercent, userData) -> {
             for (TranscriptionListener l : listeners) {
                 l.onProgress(progressPercent);
@@ -378,14 +374,14 @@ public final class AndroidWhisperer implements Closeable {
             long start,
             long end,
             long thresholdMs,
-            PauseSegment.Level level) {
+            PauseLevel level) {
         PauseSegment pause = makePause(start, end, thresholdMs, level);
         if (pause != null) target.add(pause);
     }
 
     private static PauseSegment makePause(
             long start, long end, long thresholdMs,
-            PauseSegment.Level level) {
+            PauseLevel level) {
         if (start < 0 || end < start) return null;
         if (end - start < thresholdMs || end == start) return null;
         return new PauseSegment(start, end, level);

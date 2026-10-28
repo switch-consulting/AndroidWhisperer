@@ -25,17 +25,17 @@ public class PauseSegmentTest {
 
     @Test
     public void pauseSegment_valid() {
-        PauseSegment pause = new PauseSegment(100, 300, PauseSegment.Level.SEGMENT);
+        PauseSegment pause = new PauseSegment(100, 300, PauseLevel.SEGMENT);
         assertEquals(100, pause.getStartMs());
         assertEquals(300, pause.getEndMs());
         assertEquals(200, pause.getDurationMs());
-        assertEquals(PauseSegment.Level.SEGMENT, pause.getLevel());
+        assertEquals(PauseLevel.SEGMENT, pause.getLevel());
     }
 
     @Test
     public void pauseSegment_invalidStart_throwsException() {
         try {
-            new PauseSegment(-1, 100, PauseSegment.Level.TOKEN);
+            new PauseSegment(-1, 100, PauseLevel.TOKEN);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid pause interval", e.getMessage());
@@ -45,7 +45,7 @@ public class PauseSegmentTest {
     @Test
     public void pauseSegment_invalidEnd_throwsException() {
         try {
-            new PauseSegment(200, 100, PauseSegment.Level.TOKEN);
+            new PauseSegment(200, 100, PauseLevel.TOKEN);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid pause interval", e.getMessage());

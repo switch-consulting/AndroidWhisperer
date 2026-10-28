@@ -21,6 +21,8 @@ import com.sun.jna.Pointer;
 import org.junit.Test;
 
 import de.switchconsulting.androidwhisperer.internal.WhisperBridge;
+import de.switchconsulting.androidwhisperer.internal.WhisperProgressCallback;
+import de.switchconsulting.androidwhisperer.internal.WhisperSegmentCallback;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
@@ -130,8 +132,8 @@ public class AndroidWhispererTest {
                         case "whisper_init_from_file":
                             return new Pointer(999L);
                         case "whisper_bridge_transcribe_with_callback":
-                            WhisperBridge.WhisperSegmentCallback segCb = (WhisperBridge.WhisperSegmentCallback) args[4];
-                            WhisperBridge.WhisperProgressCallback progCb = (WhisperBridge.WhisperProgressCallback) args[5];
+                            WhisperSegmentCallback segCb = (WhisperSegmentCallback) args[4];
+                            WhisperProgressCallback progCb = (WhisperProgressCallback) args[5];
                             if (segCb != null) {
                                 segCb.onNewSegment(0, "Incremental text", 0L, 500L, null);
                             }

@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import de.switchconsulting.androidwhisperer.demo.TranscriptionCallback;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -275,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        TranscriptionManager.transcribeAudio(this, selectedModel, pcmFile, new TranscriptionManager.TranscriptionCallback() {
+        TranscriptionManager.transcribeAudio(this, selectedModel, pcmFile, new TranscriptionCallback() {
             @Override
             public void onNewSegment(final SegmentResult segment, final String accumulatedTranscript) {
                 runOnUiThread(() -> tvResults.setText(getString(R.string.live_transcription_header, selectedModel.getVariant(), accumulatedTranscript)));

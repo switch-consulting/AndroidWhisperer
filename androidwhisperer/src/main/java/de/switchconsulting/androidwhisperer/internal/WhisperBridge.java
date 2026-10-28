@@ -16,7 +16,6 @@
 
 package de.switchconsulting.androidwhisperer.internal;
 
-import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -30,14 +29,6 @@ import com.sun.jna.Pointer;
 public interface WhisperBridge extends Library {
 
     WhisperBridge INSTANCE = Native.load("whisper", WhisperBridge.class);
-
-    interface WhisperSegmentCallback extends Callback {
-        void onNewSegment(int segmentIndex, String text, long t0Ms, long t1Ms, Pointer userData);
-    }
-
-    interface WhisperProgressCallback extends Callback {
-        void onProgress(int progressPercent, Pointer userData);
-    }
 
     Pointer whisper_init_from_file(String modelPath);
     void whisper_free(Pointer context);

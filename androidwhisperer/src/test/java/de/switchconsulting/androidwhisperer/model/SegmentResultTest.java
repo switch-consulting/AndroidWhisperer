@@ -28,7 +28,7 @@ public class SegmentResultTest {
 
     @Test
     public void segmentResult_valid() {
-        PauseSegment pause = new PauseSegment(50, 100, PauseSegment.Level.TOKEN);
+        PauseSegment pause = new PauseSegment(50, 100, PauseLevel.TOKEN);
         SegmentResult segment = new SegmentResult("Hello", 0, 200, Collections.singletonList(pause));
         assertEquals("Hello", segment.getText());
         assertEquals(0, segment.getStartMs());

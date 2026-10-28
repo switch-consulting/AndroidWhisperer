@@ -19,17 +19,12 @@ package de.switchconsulting.androidwhisperer.model;
 /** A detected silent interval between two speech boundaries. */
 public final class PauseSegment {
 
-    public enum Level {
-        SEGMENT,
-        TOKEN
-    }
-
     private final long startMs;
     private final long endMs;
     private final long durationMs;
-    private final Level level;
+    private final PauseLevel level;
 
-    public PauseSegment(long startMs, long endMs, Level level) {
+    public PauseSegment(long startMs, long endMs, PauseLevel level) {
         if (startMs < 0 || endMs < startMs) {
             throw new IllegalArgumentException("Invalid pause interval");
         }
@@ -46,5 +41,5 @@ public final class PauseSegment {
     public long getStartMs() { return startMs; }
     public long getEndMs() { return endMs; }
     public long getDurationMs() { return durationMs; }
-    public Level getLevel() { return level; }
+    public PauseLevel getLevel() { return level; }
 }

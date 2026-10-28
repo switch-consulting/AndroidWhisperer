@@ -19,7 +19,6 @@ package de.switchconsulting.androidwhisperer.internal;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import com.sun.jna.PointerType;
 
 /**
  * Internal mapping for the whisper.cpp C API.
@@ -31,9 +30,6 @@ import com.sun.jna.PointerType;
 public interface WhisperLibrary extends Library {
 
     WhisperLibrary INSTANCE = Native.load("whisper", WhisperLibrary.class);
-
-    /** Opaque native context. */
-    class WhisperContext extends PointerType {}
 
     // Lifecycle and diagnostics.
     Pointer whisper_init_from_file(String modelPath);

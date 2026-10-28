@@ -32,13 +32,6 @@ import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 public class TranscriptionManager {
     private static final String TAG = "TranscriptionManager";
 
-    public interface TranscriptionCallback {
-        void onNewSegment(SegmentResult segment, String accumulatedTranscript);
-        void onProgress(int progressPercent);
-        void onSuccess(TranscriptionResult result);
-        void onError(Exception e);
-    }
-
     @SuppressWarnings("unused")
     public static void transcribeAudio(final Context context, final File pcmFile, final TranscriptionCallback callback) {
         transcribeAudio(context, WhisperModel.TINY, pcmFile, callback);

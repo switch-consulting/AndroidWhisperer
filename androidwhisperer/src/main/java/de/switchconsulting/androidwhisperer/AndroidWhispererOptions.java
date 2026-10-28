@@ -17,12 +17,12 @@
 package de.switchconsulting.androidwhisperer;
 
 public final class AndroidWhispererOptions {
-    private final AndroidWhisperer.PauseMode pauseMode;
+    private final PauseMode pauseMode;
     private final long segmentPauseThresholdMs;
     private final long tokenPauseThresholdMs;
 
     public AndroidWhispererOptions(
-            AndroidWhisperer.PauseMode pauseMode,
+            PauseMode pauseMode,
             long segmentPauseThresholdMs,
             long tokenPauseThresholdMs) {
         if (pauseMode == null
@@ -36,10 +36,10 @@ public final class AndroidWhispererOptions {
     }
 
     public static AndroidWhispererOptions defaults() {
-        return new AndroidWhispererOptions(AndroidWhisperer.PauseMode.BOTH, 300, 100);
+        return new AndroidWhispererOptions(PauseMode.BOTH, 300, 100);
     }
 
-    public AndroidWhisperer.PauseMode getPauseMode() {
+    public PauseMode getPauseMode() {
         return pauseMode;
     }
     public long getSegmentPauseThresholdMs() {
