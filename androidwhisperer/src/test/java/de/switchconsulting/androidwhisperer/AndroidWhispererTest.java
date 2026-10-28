@@ -179,6 +179,11 @@ public class AndroidWhispererTest {
                 public void onProgress(int progressPercent) {
                     lastProgress.set(progressPercent);
                 }
+
+                @Override
+                public void onError(TranscriptionException exception) {
+                    fail("Unexpected transcription error: " + exception.getMessage());
+                }
             });
 
             TranscriptionResult result = w.transcribe(new float[]{0.1f});
@@ -206,9 +211,52 @@ public class AndroidWhispererTest {
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
             w.transcribe(new float[]{0.1f});
-            fail("Expected IllegalStateException");
-        } catch (IllegalStateException e) {
+            fail("Expected TranscriptionException");
+        } catch (TranscriptionException e) {
             assertEquals("Whisper inference failed with code -1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void transcribe_nativeFailure_notifiesListenerOnError() {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    if (name.equals("whisper_init_from_file")) {
+                        return new Pointer(999L);
+                    } else if (name.equals("whisper_bridge_transcribe_with_callback")) {
+                        return -1;
+                    }
+                    return null;
+                });
+
+        AtomicBoolean errorCalled = new AtomicBoolean(false);
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            w.addListener(new TranscriptionListener() {
+                @Override
+                public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
+                }
+
+                @Override
+                public void onProgress(int progressPercent) {
+                }
+
+                @Override
+                public void onError(TranscriptionException exception) {
+                    errorCalled.set(true);
+                    assertEquals("Whisper inference failed with code -1", exception.getMessage());
+                }
+            });
+
+            w.transcribe(new float[]{0.1f});
+            fail("Expected TranscriptionException");
+        } catch (TranscriptionException e) {
+            assertEquals("Whisper inference failed with code -1", e.getMessage());
+            assertTrue(errorCalled.get());
         }
     }
 

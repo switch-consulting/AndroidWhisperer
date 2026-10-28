@@ -75,6 +75,16 @@ public final class AndroidWhisperer implements Closeable {
         }
     }
 
+    private void notifyListenersError(TranscriptionException e) {
+        for (TranscriptionListener l : listeners) {
+            try {
+                l.onError(e);
+            } catch (Exception ignored) {
+                // Prevent listener errors from masking the original transcription exception
+            }
+        }
+    }
+
     /**
      * Initializes the engine with the default model ({@link WhisperModel#TINY}).
      *
@@ -208,125 +218,135 @@ public final class AndroidWhisperer implements Closeable {
             throw new IllegalArgumentException("options == null");
         }
 
-        boolean tokenMode = options.getPauseMode() == PauseMode.TOKEN
-                || options.getPauseMode() == PauseMode.BOTH;
+        try {
+            boolean tokenMode = options.getPauseMode() == PauseMode.TOKEN
+                    || options.getPauseMode() == PauseMode.BOTH;
 
-        int status;
-        if (listeners.isEmpty()) {
-            // Direct fallback path when no listeners are registered
-            status = nativeApi.whisper_bridge_transcribe(
-                    context, samples, samples.length, tokenMode ? 1 : 0);
-        } else {
-            // Incremental callback path when listeners are registered
-            final StringBuilder liveTranscript = new StringBuilder();
-            WhisperSegmentCallback segmentCb = createSegmentCallback(liveTranscript);
-            WhisperProgressCallback progressCb = createProgressCallback();
+            int status;
+            if (listeners.isEmpty()) {
+                // Direct fallback path when no listeners are registered
+                status = nativeApi.whisper_bridge_transcribe(
+                        context, samples, samples.length, tokenMode ? 1 : 0);
+            } else {
+                // Incremental callback path when listeners are registered
+                final StringBuilder liveTranscript = new StringBuilder();
+                WhisperSegmentCallback segmentCb = createSegmentCallback(liveTranscript);
+                WhisperProgressCallback progressCb = createProgressCallback();
 
-            status = nativeApi.whisper_bridge_transcribe_with_callback(
-                    context, samples, samples.length, tokenMode ? 1 : 0,
-                    segmentCb, progressCb, null);
-        }
-
-        if (status != 0) {
-            throw new IllegalStateException(
-                    "Whisper inference failed with code " + status);
-        }
-
-        int count = nativeApi.whisper_full_n_segments(context);
-        if (count < 0) {
-            throw new IllegalStateException("Invalid segment count");
-        }
-
-        List<SegmentResult> segments = new ArrayList<>();
-        List<PauseSegment> allPauses = new ArrayList<>();
-        StringBuilder transcript = new StringBuilder();
-
-        long previousSegmentEnd = -1;
-
-        for (int i = 0; i < count; i++) {
-            long start = toMillis(
-                    nativeApi.whisper_full_get_segment_t0(context, i));
-            long end = toMillis(
-                    nativeApi.whisper_full_get_segment_t1(context, i));
-            String text = safe(nativeApi.whisper_full_get_segment_text(
-                    context, i));
-
-            if (end < start) {
-                throw new IllegalStateException(
-                        "Invalid timestamps in segment " + i);
+                status = nativeApi.whisper_bridge_transcribe_with_callback(
+                        context, samples, samples.length, tokenMode ? 1 : 0,
+                        segmentCb, progressCb, null);
             }
 
-            // Segment gaps represent larger inter-segment pauses.
-            if ((options.getPauseMode() == PauseMode.SEGMENT
-                    || options.getPauseMode() == PauseMode.BOTH)
-                    && previousSegmentEnd >= 0 && start >= previousSegmentEnd) {
-                addPause(allPauses, previousSegmentEnd, start,
-                        options.getSegmentPauseThresholdMs(),
-                        PauseLevel.SEGMENT);
+            if (status != 0) {
+                throw new TranscriptionException(
+                        "Whisper inference failed with code " + status);
             }
 
-            List<PauseSegment> segmentPauses = new ArrayList<>();
+            int count = nativeApi.whisper_full_n_segments(context);
+            if (count < 0) {
+                throw new TranscriptionException("Invalid segment count");
+            }
 
-            if (tokenMode) {
-                int tokenCount = nativeApi.whisper_full_n_tokens(context, i);
-                long previousTokenEnd = -1;
+            List<SegmentResult> segments = new ArrayList<>();
+            List<PauseSegment> allPauses = new ArrayList<>();
+            StringBuilder transcript = new StringBuilder();
 
-                for (int t = 0; t < tokenCount; t++) {
-                    String token = safe(
-                            nativeApi.whisper_full_get_token_text(
-                                    context, i, t));
+            long previousSegmentEnd = -1;
 
-                    // Do not let special control tokens create false pauses.
-                    if (isSpecialToken(token)) {
-                        continue;
-                    }
+            for (int i = 0; i < count; i++) {
+                long start = toMillis(
+                        nativeApi.whisper_full_get_segment_t0(context, i));
+                long end = toMillis(
+                        nativeApi.whisper_full_get_segment_t1(context, i));
+                String text = safe(nativeApi.whisper_full_get_segment_text(
+                        context, i));
 
-                    long tokenStart = toMillis(
-                            nativeApi.whisper_full_get_token_t0(context, i, t));
-                    long tokenEnd = toMillis(
-                            nativeApi.whisper_full_get_token_t1(context, i, t));
-
-                    if (tokenEnd < tokenStart) {
-                        continue;
-                    }
-
-                    if (previousTokenEnd >= 0
-                            && tokenStart >= previousTokenEnd) {
-                        PauseSegment pause = makePause(
-                                previousTokenEnd, tokenStart,
-                                options.getTokenPauseThresholdMs(),
-                                PauseLevel.TOKEN);
-                        if (pause != null) {
-                            segmentPauses.add(pause);
-                            allPauses.add(pause);
-                        }
-                    }
-
-                    previousTokenEnd = Math.max(previousTokenEnd, tokenEnd);
+                if (end < start) {
+                    throw new TranscriptionException(
+                            "Invalid timestamps in segment " + i);
                 }
+
+                // Segment gaps represent larger inter-segment pauses.
+                if ((options.getPauseMode() == PauseMode.SEGMENT
+                        || options.getPauseMode() == PauseMode.BOTH)
+                        && previousSegmentEnd >= 0 && start >= previousSegmentEnd) {
+                    addPause(allPauses, previousSegmentEnd, start,
+                            options.getSegmentPauseThresholdMs(),
+                            PauseLevel.SEGMENT);
+                }
+
+                List<PauseSegment> segmentPauses = new ArrayList<>();
+
+                if (tokenMode) {
+                    int tokenCount = nativeApi.whisper_full_n_tokens(context, i);
+                    long previousTokenEnd = -1;
+
+                    for (int t = 0; t < tokenCount; t++) {
+                        String token = safe(
+                                nativeApi.whisper_full_get_token_text(
+                                        context, i, t));
+
+                        // Do not let special control tokens create false pauses.
+                        if (isSpecialToken(token)) {
+                            continue;
+                        }
+
+                        long tokenStart = toMillis(
+                                nativeApi.whisper_full_get_token_t0(context, i, t));
+                        long tokenEnd = toMillis(
+                                nativeApi.whisper_full_get_token_t1(context, i, t));
+
+                        if (tokenEnd < tokenStart) {
+                            continue;
+                        }
+
+                        if (previousTokenEnd >= 0
+                                && tokenStart >= previousTokenEnd) {
+                            PauseSegment pause = makePause(
+                                    previousTokenEnd, tokenStart,
+                                    options.getTokenPauseThresholdMs(),
+                                    PauseLevel.TOKEN);
+                            if (pause != null) {
+                                segmentPauses.add(pause);
+                                allPauses.add(pause);
+                            }
+                        }
+
+                        previousTokenEnd = Math.max(previousTokenEnd, tokenEnd);
+                    }
+                }
+
+                segments.add(new SegmentResult(
+                        text, start, end, segmentPauses));
+
+                if (transcript.length() > 0) {
+                    transcript.append(' ');
+                }
+                transcript.append(text);
+
+                previousSegmentEnd = Math.max(previousSegmentEnd, end);
             }
 
-            segments.add(new SegmentResult(
-                    text, start, end, segmentPauses));
-
-            if (transcript.length() > 0) {
-                transcript.append(' ');
+            String language = "";
+            int langId = nativeApi.whisper_bridge_detect_language(
+                    context, samples, samples.length);
+            if (langId >= 0) {
+                String detected = nativeApi.whisper_lang_str(langId);
+                if (detected != null) language = detected;
             }
-            transcript.append(text);
 
-            previousSegmentEnd = Math.max(previousSegmentEnd, end);
+            return new TranscriptionResult(
+                    transcript.toString().trim(), language, segments, allPauses);
+        } catch (TranscriptionException e) {
+            notifyListenersError(e);
+            throw e;
+        } catch (Exception e) {
+            TranscriptionException te = new TranscriptionException(
+                    e.getMessage() != null ? e.getMessage() : "Transcription failed", e);
+            notifyListenersError(te);
+            throw te;
         }
-
-        String language = "";
-        int langId = nativeApi.whisper_bridge_detect_language(
-                context, samples, samples.length);
-        if (langId >= 0) {
-            String detected = nativeApi.whisper_lang_str(langId);
-            if (detected != null) language = detected;
-        }
-
-        return new TranscriptionResult(
-                transcript.toString().trim(), language, segments, allPauses);
     }
 
     private WhisperSegmentCallback createSegmentCallback(StringBuilder liveTranscript) {
@@ -362,7 +382,7 @@ public final class AndroidWhisperer implements Closeable {
      */
     private static long toMillis(long timestamp) {
         if (timestamp < 0 || timestamp > Long.MAX_VALUE / 10) {
-            throw new IllegalStateException(
+            throw new TranscriptionException(
                     "Invalid native timestamp: " + timestamp);
         }
         return timestamp * 10L;

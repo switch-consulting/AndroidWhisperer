@@ -37,4 +37,11 @@ public interface TranscriptionListener {
      * @param progressPercent current progress percentage
      */
     void onProgress(int progressPercent);
+
+    /**
+     * Called when an error occurs during transcription.
+     *
+     * @param exception the transcription exception detailing the error
+     */
+    void onError(TranscriptionException exception);
 }

@@ -23,6 +23,7 @@ import java.io.File;
 
 import de.switchconsulting.androidwhisperer.AndroidWhisperer;
 import de.switchconsulting.androidwhisperer.ModelManager;
+import de.switchconsulting.androidwhisperer.TranscriptionException;
 import de.switchconsulting.androidwhisperer.TranscriptionListener;
 import de.switchconsulting.androidwhisperer.WhisperModel;
 import de.switchconsulting.androidwhisperer.WhisperModelNotAvailable;
@@ -60,6 +61,13 @@ public class TranscriptionManager {
                     public void onProgress(int progressPercent) {
                         if (callback != null) {
                             callback.onProgress(progressPercent);
+                        }
+                    }
+
+                    @Override
+                    public void onError(TranscriptionException exception) {
+                        if (callback != null) {
+                            callback.onError(exception);
                         }
                     }
                 });
