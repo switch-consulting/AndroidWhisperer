@@ -31,6 +31,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 public class ModelManagerTest {
 
@@ -101,6 +104,65 @@ public class ModelManagerTest {
 
         WhisperModel customModelWithSize = new WhisperModel("custom", "file.bin", URI.create("https://example.com/file.bin").toURL(), 12345L);
         assertEquals(12345L, customModelWithSize.getDownloadSize());
+    }
+
+    @Test
+    public void whisperModel_supportedLocales() throws Exception {
+        // Predefined multilingual models
+        WhisperModel[] multilingualModels = new WhisperModel[] {
+                WhisperModel.TINY, WhisperModel.BASE, WhisperModel.SMALL, WhisperModel.MEDIUM, WhisperModel.LARGE
+        };
+        for (WhisperModel m : multilingualModels) {
+            List<Locale> locales = m.getSupportedLocales();
+            assertNotNull(locales);
+            assertEquals(100, locales.size());
+            assertEquals(locales, m.getLocales());
+            assertTrue(m.isLocaleSupported(Locale.GERMAN));
+            assertTrue(m.isLocaleSupported(Locale.ENGLISH));
+            assertTrue(m.isLanguageSupported("de"));
+            assertTrue(m.isLanguageSupported("en"));
+        }
+
+        // Predefined English-only models
+        WhisperModel[] englishModels = new WhisperModel[] {
+                WhisperModel.TINY_EN, WhisperModel.BASE_EN, WhisperModel.SMALL_EN, WhisperModel.MEDIUM_EN
+        };
+        for (WhisperModel m : englishModels) {
+            List<Locale> locales = m.getSupportedLocales();
+            assertNotNull(locales);
+            assertEquals(1, locales.size());
+            assertEquals(Locale.ENGLISH, locales.get(0));
+            assertTrue(m.isLocaleSupported(Locale.ENGLISH));
+            assertFalse(m.isLocaleSupported(Locale.GERMAN));
+            assertTrue(m.isLanguageSupported("en"));
+            assertFalse(m.isLanguageSupported("de"));
+        }
+
+        // Custom model with explicit locales (testing different constructor overloads)
+        List<Locale> customLocales = Arrays.asList(Locale.GERMAN, Locale.FRENCH);
+        WhisperModel customModel1 = new WhisperModel("custom-de-fr", "file.bin", "models/file.bin", customLocales);
+        assertEquals(2, customModel1.getSupportedLocales().size());
+        assertTrue(customModel1.isLocaleSupported(Locale.GERMAN));
+
+        WhisperModel customModel2 = new WhisperModel("custom-url", "file.bin", URI.create("https://example.com/file.bin").toURL(), customLocales);
+        assertEquals(2, customModel2.getSupportedLocales().size());
+
+        WhisperModel customModel3 = new WhisperModel("custom-url-size", "file.bin", URI.create("https://example.com/file.bin").toURL(), 1234L, customLocales);
+        assertEquals(2, customModel3.getSupportedLocales().size());
+
+        WhisperModel customModel4 = new WhisperModel("custom-full", "file.bin", "models/file.bin", URI.create("https://example.com/file.bin").toURL(), 1234L, customLocales);
+        assertEquals(2, customModel4.getSupportedLocales().size());
+
+        // Custom model with auto-detected english variant
+        WhisperModel customEnModel = new WhisperModel("my-model.en", "file.bin", "models/file.bin");
+        assertEquals(1, customEnModel.getSupportedLocales().size());
+        assertTrue(customEnModel.isLocaleSupported(Locale.ENGLISH));
+        assertFalse(customEnModel.isLocaleSupported(Locale.GERMAN));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void whisperModel_supportedLocales_unmodifiable() {
+        WhisperModel.TINY.getSupportedLocales().add(Locale.ENGLISH);
     }
 
     @Test
