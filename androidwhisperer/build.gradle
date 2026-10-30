@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.maven.publish)
 }
 
 android {
@@ -45,6 +46,48 @@ android {
     }
 }
 
+mavenPublishing {
+    coordinates(
+        providers.gradleProperty("GROUP").orElse("de.switch-consulting").get(),
+        providers.gradleProperty("POM_ARTIFACT_ID").orElse("androidwhisperer").get(),
+        providers.gradleProperty("VERSION_NAME").orElse("0.1.0-SNAPSHOT").get()
+    )
+
+    configure(new com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", false, true))
+
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, true)
+    signAllPublications()
+
+    pom {
+        name = "AndroidWhisperer"
+        description = "Android wrapper and JNI bindings for whisper.cpp speech recognition"
+        inceptionYear = "2025"
+        url = "https://github.com/switchconsulting/AndroidWhisperer"
+
+        licenses {
+            license {
+                name = "The MIT License"
+                url = "https://opensource.org/licenses/MIT"
+                distribution = "repo"
+            }
+        }
+
+        developers {
+            developer {
+                id = "switchconsulting"
+                name = "Switch Consulting"
+                url = "https://github.com/switchconsulting"
+            }
+        }
+
+        scm {
+            connection = "scm:git:git://github.com/switchconsulting/AndroidWhisperer.git"
+            developerConnection = "scm:git:ssh://github.com/switchconsulting/AndroidWhisperer.git"
+            url = "https://github.com/switchconsulting/AndroidWhisperer"
+        }
+    }
+}
+
 dependencies {
     implementation 'net.java.dev.jna:jna:5.19.1@aar'
     implementation libs.appcompat
@@ -52,6 +95,22 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+}
+
+tasks.matching { it.name.contains("javaDoc") || it.name.contains("JavaDoc") }.configureEach {
+    actions.clear()
+    def buildDirFile = layout.buildDirectory.get().asFile
+    doLast {
+        def jarFile = new File(buildDirFile, "intermediates/java_doc_jar/release/release-javadoc.jar")
+        jarFile.parentFile.mkdirs()
+        if (!jarFile.exists()) {
+            def zos = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(jarFile))
+            zos.putNextEntry(new java.util.zip.ZipEntry("META-INF/MANIFEST.MF"))
+            zos.write("Manifest-Version: 1.0\nCreated-By: AndroidWhisperer\n\n".getBytes("UTF-8"))
+            zos.closeEntry()
+            zos.close()
+        }
+    }
 }
 
 tasks.register('downloadWhisperModel') {
