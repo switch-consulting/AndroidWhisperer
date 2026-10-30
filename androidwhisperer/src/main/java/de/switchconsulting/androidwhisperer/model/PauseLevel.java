@@ -16,7 +16,12 @@
 
 package de.switchconsulting.androidwhisperer.model;
 
+/**
+ * Granularity level of a detected pause (segment or token).
+ */
 public enum PauseLevel {
+    /** Pause detected between speech segments. */
     SEGMENT,
+    /** Pause detected between individual tokens. */
     TOKEN
 }

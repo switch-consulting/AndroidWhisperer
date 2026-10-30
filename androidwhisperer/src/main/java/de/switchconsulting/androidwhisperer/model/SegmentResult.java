@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** One Whisper speech segment with optional token-level detail. */
+/**
+ * Represents a single decoded speech segment from Whisper with timing and optional token-level pauses.
+ */
 public final class SegmentResult {
 
     private final String text;
@@ -28,6 +30,14 @@ public final class SegmentResult {
     private final long endMs;
     private final List<PauseSegment> pauses;
 
+    /**
+     * Constructs a segment result with transcribed text, start/end timestamps, and token pauses.
+     *
+     * @param text transcribed text for this segment
+     * @param startMs start time in milliseconds
+     * @param endMs end time in milliseconds
+     * @param pauses list of token pauses within this segment
+     */
     public SegmentResult(
             String text, long startMs, long endMs,
             List<PauseSegment> pauses) {
@@ -42,8 +52,31 @@ public final class SegmentResult {
                         ? Collections.emptyList() : pauses));
     }
 
+    /**
+     * Returns the transcribed text of this segment.
+     *
+     * @return segment text
+     */
     public String getText() { return text; }
+
+    /**
+     * Returns the start time of this segment in milliseconds.
+     *
+     * @return start time in ms
+     */
     public long getStartMs() { return startMs; }
+
+    /**
+     * Returns the end time of this segment in milliseconds.
+     *
+     * @return end time in ms
+     */
     public long getEndMs() { return endMs; }
+
+    /**
+     * Returns the list of token-level pauses detected within this segment.
+     *
+     * @return unmodifiable list of pause segments
+     */
     public List<PauseSegment> getPauses() { return pauses; }
 }

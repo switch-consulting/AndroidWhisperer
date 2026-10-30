@@ -28,6 +28,7 @@ import java.util.Arrays;
 /** Audio conversion utilities for Whisper's 16 kHz mono float PCM input. */
 public final class AudioUtils {
 
+    /** Target sample rate required by Whisper (16 kHz). */
     public static final int TARGET_SAMPLE_RATE = 16_000;
 
     private AudioUtils() {}
@@ -36,6 +37,10 @@ public final class AudioUtils {
      * Reads a little-endian PCM16 WAV file.
      * Supports ordinary RIFF/WAVE PCM files with 16-bit integer samples.
      * Other encodings (float WAV, compressed WAV, 24-bit PCM) are rejected.
+     *
+     * @param file the WAV file to read
+     * @return mono float PCM samples at 16 kHz
+     * @throws IOException if the file cannot be read or has an unsupported format
      */
     public static float[] readWav(File file) throws IOException {
         byte[] bytes;
@@ -121,6 +126,7 @@ public final class AudioUtils {
      * @param pcm interleaved PCM frames
      * @param sourceRate source sample rate in Hz
      * @param channels number of interleaved channels
+     * @return mono float PCM samples at 16 kHz
      */
     public static float[] fromPcm16(
             byte[] pcm, int sourceRate, int channels) {
@@ -155,6 +161,11 @@ public final class AudioUtils {
     /**
      * Converts interleaved float PCM in [-1, 1] to mono 16 kHz.
      * Input must contain one float per channel per frame.
+     *
+     * @param interleaved interleaved float PCM samples
+     * @param sourceRate source sample rate in Hz
+     * @param channels number of interleaved channels
+     * @return mono float PCM samples at 16 kHz
      */
     public static float[] fromFloatPcm(
             float[] interleaved, int sourceRate, int channels) {
@@ -189,6 +200,11 @@ public final class AudioUtils {
     /**
      * Linear resampling. For high-quality production capture pipelines,
      * replace with a band-limited resampler to reduce aliasing.
+     *
+     * @param input input audio samples
+     * @param sourceRate source sample rate in Hz
+     * @param targetRate target sample rate in Hz
+     * @return resampled audio float array
      */
     public static float[] resample(
             float[] input, int sourceRate, int targetRate) {

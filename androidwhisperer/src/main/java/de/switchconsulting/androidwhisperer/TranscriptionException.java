@@ -21,14 +21,30 @@ package de.switchconsulting.androidwhisperer;
  */
 public class TranscriptionException extends RuntimeException {
 
+    /**
+     * Constructs a transcription exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
     public TranscriptionException(String message) {
         super(message);
     }
 
+    /**
+     * Constructs a transcription exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause the cause
+     */
     public TranscriptionException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    /**
+     * Constructs a transcription exception with the specified cause.
+     *
+     * @param cause the cause
+     */
     public TranscriptionException(Throwable cause) {
         super(cause);
     }

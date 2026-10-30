@@ -21,10 +21,21 @@ package de.switchconsulting.androidwhisperer;
  */
 public class WhisperModelNotAvailable extends RuntimeException {
 
+    /**
+     * Constructs a model not available exception with the specified detail message.
+     *
+     * @param message the detail message
+     */
     public WhisperModelNotAvailable(String message) {
         super(message);
     }
 
+    /**
+     * Constructs a model not available exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause the cause
+     */
     public WhisperModelNotAvailable(String message, Throwable cause) {
         super(message, cause);
     }

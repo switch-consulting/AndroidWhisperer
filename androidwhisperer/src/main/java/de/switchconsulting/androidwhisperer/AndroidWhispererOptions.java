@@ -16,11 +16,21 @@
 
 package de.switchconsulting.androidwhisperer;
 
+/**
+ * Configuration options for transcription behavior and pause analysis.
+ */
 public final class AndroidWhispererOptions {
     private final PauseMode pauseMode;
     private final long segmentPauseThresholdMs;
     private final long tokenPauseThresholdMs;
 
+    /**
+     * Creates new transcription options with specified pause mode and thresholds.
+     *
+     * @param pauseMode the pause analysis mode ({@link PauseMode})
+     * @param segmentPauseThresholdMs minimum duration in milliseconds to detect a segment pause
+     * @param tokenPauseThresholdMs minimum duration in milliseconds to detect a token pause
+     */
     public AndroidWhispererOptions(
             PauseMode pauseMode,
             long segmentPauseThresholdMs,
@@ -35,16 +45,38 @@ public final class AndroidWhispererOptions {
         this.tokenPauseThresholdMs = tokenPauseThresholdMs;
     }
 
+    /**
+     * Returns the default transcription options ({@link PauseMode#BOTH}, 300ms segment threshold, 100ms token threshold).
+     *
+     * @return default options instance
+     */
     public static AndroidWhispererOptions defaults() {
         return new AndroidWhispererOptions(PauseMode.BOTH, 300, 100);
     }
 
+    /**
+     * Returns the configured pause analysis mode.
+     *
+     * @return the pause mode
+     */
     public PauseMode getPauseMode() {
         return pauseMode;
     }
+
+    /**
+     * Returns the segment pause threshold in milliseconds.
+     *
+     * @return segment pause threshold in ms
+     */
     public long getSegmentPauseThresholdMs() {
         return segmentPauseThresholdMs;
     }
+
+    /**
+     * Returns the token pause threshold in milliseconds.
+     *
+     * @return token pause threshold in ms
+     */
     public long getTokenPauseThresholdMs() {
         return tokenPauseThresholdMs;
     }

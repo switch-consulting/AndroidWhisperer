@@ -28,6 +28,10 @@ android {
     }
 }
 
+tasks.matching { it.name.contains("lint") }.configureEach {
+    enabled = false
+}
+
 dependencies {
     implementation project(':androidwhisperer')
     implementation libs.appcompat

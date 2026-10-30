@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Complete transcription and pause-analysis result. */
+/**
+ * Complete transcription result containing full text, detected language, segments, and pause intervals.
+ */
 public final class TranscriptionResult {
 
     private final String text;
@@ -28,6 +30,14 @@ public final class TranscriptionResult {
     private final List<SegmentResult> segments;
     private final List<PauseSegment> pauses;
 
+    /**
+     * Constructs a transcription result with full text, language, segments, and pauses.
+     *
+     * @param text full transcribed text
+     * @param language detected language code (e.g. "en", "de")
+     * @param segments list of decoded speech segments ({@link SegmentResult})
+     * @param pauses list of detected pause intervals ({@link PauseSegment})
+     */
     public TranscriptionResult(
             String text,
             String language,
@@ -43,8 +53,31 @@ public final class TranscriptionResult {
                         ? Collections.emptyList() : pauses));
     }
 
+    /**
+     * Returns the full transcribed text.
+     *
+     * @return full transcript text
+     */
     public String getText() { return text; }
+
+    /**
+     * Returns the detected language code (e.g. "en", "de").
+     *
+     * @return language code
+     */
     public String getLanguage() { return language; }
+
+    /**
+     * Returns the list of speech segments.
+     *
+     * @return unmodifiable list of segment results
+     */
     public List<SegmentResult> getSegments() { return segments; }
+
+    /**
+     * Returns the list of all detected pause intervals (segment-level and/or token-level).
+     *
+     * @return unmodifiable list of pause segments
+     */
     public List<PauseSegment> getPauses() { return pauses; }
 }
