@@ -119,10 +119,10 @@ whisperer.close();
 
 This project includes `whisper.cpp` as a Git submodule located at `androidwhisperer/src/main/cpp/whisper.cpp`.
 
-To update `whisper.cpp` to the latest upstream release:
+To initialize and update `whisper.cpp` to the latest upstream release:
 
 ```bash
-git submodule update --remote androidwhisperer/src/main/cpp/whisper.cpp
+git submodule update --init --remote androidwhisperer/src/main/cpp/whisper.cpp
 ```
 
 Or checkout a specific tag:
