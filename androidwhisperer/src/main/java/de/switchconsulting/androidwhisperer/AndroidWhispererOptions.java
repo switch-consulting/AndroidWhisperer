@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import java.util.Locale;
+
 /**
  * Configuration options for transcription behavior and pause analysis.
  */
@@ -23,6 +25,7 @@ public final class AndroidWhispererOptions {
     private final PauseMode pauseMode;
     private final long segmentPauseThresholdMs;
     private final long tokenPauseThresholdMs;
+    private final Locale locale;
 
     /**
      * Creates new transcription options with specified pause mode and thresholds.
@@ -35,6 +38,22 @@ public final class AndroidWhispererOptions {
             PauseMode pauseMode,
             long segmentPauseThresholdMs,
             long tokenPauseThresholdMs) {
+        this(pauseMode, segmentPauseThresholdMs, tokenPauseThresholdMs, null);
+    }
+
+    /**
+     * Creates new transcription options with specified pause mode, thresholds, and language locale.
+     *
+     * @param pauseMode the pause analysis mode ({@link PauseMode})
+     * @param segmentPauseThresholdMs minimum duration in milliseconds to detect a segment pause
+     * @param tokenPauseThresholdMs minimum duration in milliseconds to detect a token pause
+     * @param locale preselected language locale, or {@code null} for default/auto-detection
+     */
+    public AndroidWhispererOptions(
+            PauseMode pauseMode,
+            long segmentPauseThresholdMs,
+            long tokenPauseThresholdMs,
+            Locale locale) {
         if (pauseMode == null
                 || segmentPauseThresholdMs < 0
                 || tokenPauseThresholdMs < 0) {
@@ -43,15 +62,16 @@ public final class AndroidWhispererOptions {
         this.pauseMode = pauseMode;
         this.segmentPauseThresholdMs = segmentPauseThresholdMs;
         this.tokenPauseThresholdMs = tokenPauseThresholdMs;
+        this.locale = locale;
     }
 
     /**
-     * Returns the default transcription options ({@link PauseMode#BOTH}, 300ms segment threshold, 100ms token threshold).
+     * Returns the default transcription options ({@link PauseMode#BOTH}, 300ms segment threshold, 100ms token threshold, no language preselection).
      *
      * @return default options instance
      */
     public static AndroidWhispererOptions defaults() {
-        return new AndroidWhispererOptions(PauseMode.BOTH, 300, 100);
+        return new AndroidWhispererOptions(PauseMode.BOTH, 300, 100, null);
     }
 
     /**
@@ -79,5 +99,14 @@ public final class AndroidWhispererOptions {
      */
     public long getTokenPauseThresholdMs() {
         return tokenPauseThresholdMs;
+    }
+
+    /**
+     * Returns the preselected language locale, or {@code null} if no language is preselected.
+     *
+     * @return the preselected locale
+     */
+    public Locale getLocale() {
+        return locale;
     }
 }

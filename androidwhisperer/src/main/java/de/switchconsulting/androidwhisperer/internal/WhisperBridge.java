@@ -36,24 +36,34 @@ public interface WhisperBridge extends Library {
     /**
      * Executes inference. Returns zero on success.
      * tokenTimestamps enables native token alignment/timestamps.
+     * language specifies the preselected language code (e.g., "en", "de"), or null/empty for auto-detect.
      */
     int whisper_bridge_transcribe(
             Pointer context,
             float[] samples,
             int sampleCount,
-            int tokenTimestamps);
+            int tokenTimestamps,
+            String language);
 
     /**
      * Executes inference with incremental segment and progress callbacks.
+     * language specifies the preselected language code (e.g., "en", "de"), or null/empty for auto-detect.
      */
     int whisper_bridge_transcribe_with_callback(
             Pointer context,
             float[] samples,
             int sampleCount,
             int tokenTimestamps,
+            String language,
             WhisperSegmentCallback segmentCallback,
             WhisperProgressCallback progressCallback,
             Pointer userData);
+
+    /** Returns non-zero if the model is multilingual, or zero if English-only. */
+    int whisper_is_multilingual(Pointer context);
+
+    /** Returns language ID for specified language string, or negative value if not found. */
+    int whisper_lang_id(String lang);
 
     /** Returns detected language ID, or a negative value on failure. */
     int whisper_bridge_detect_language(

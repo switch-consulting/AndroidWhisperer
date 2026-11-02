@@ -87,13 +87,15 @@ static void bridge_native_progress_cb(
  * @param samples PCM audio sample array (16 kHz, single channel).
  * @param n_samples Total number of samples.
  * @param token_timestamps Non-zero to enable token-level timestamp alignment.
+ * @param language Optional language code (e.g. "en", "de"), or nullptr for auto-detection.
  * @return 0 on success, non-zero on failure.
  */
 WHISPER_BRIDGE_API int whisper_bridge_transcribe(
         struct whisper_context * ctx,
         const float * samples,
         int n_samples,
-        int token_timestamps) {
+        int token_timestamps,
+        const char * language) {
     if (ctx == nullptr || samples == nullptr || n_samples <= 0) {
         return -1;
     }
@@ -104,6 +106,9 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe(
     params.print_timestamps = false;
     params.print_special    = false;
     params.token_timestamps = token_timestamps != 0;
+    if (language != nullptr && std::strlen(language) > 0) {
+        params.language = language;
+    }
 
     return whisper_full(ctx, params, samples, n_samples);
 }
@@ -115,6 +120,7 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe(
  * @param samples PCM audio sample array (16 kHz, single channel).
  * @param n_samples Total number of samples.
  * @param token_timestamps Non-zero to enable token-level timestamp alignment.
+ * @param language Optional language code (e.g. "en", "de"), or nullptr for auto-detection.
  * @param segment_cb Callback invoked when new text segments are decoded.
  * @param progress_cb Callback invoked on progress updates (0 to 100).
  * @param user_data Arbitrary pointer forwarded to callbacks.
@@ -125,6 +131,7 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe_with_callback(
         const float * samples,
         int n_samples,
         int token_timestamps,
+        const char * language,
         whisper_bridge_segment_cb segment_cb,
         whisper_bridge_progress_cb progress_cb,
         void * user_data) {
@@ -138,6 +145,9 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe_with_callback(
     params.print_timestamps = false;
     params.print_special    = false;
     params.token_timestamps = token_timestamps != 0;
+    if (language != nullptr && std::strlen(language) > 0) {
+        params.language = language;
+    }
 
     whisper_bridge_callback_data cb_data = { segment_cb, progress_cb, user_data };
 

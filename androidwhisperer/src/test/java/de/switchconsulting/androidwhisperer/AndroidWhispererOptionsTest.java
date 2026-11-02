@@ -18,8 +18,11 @@ package de.switchconsulting.androidwhisperer;
 
 import org.junit.Test;
 
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class AndroidWhispererOptionsTest {
 
@@ -30,6 +33,7 @@ public class AndroidWhispererOptionsTest {
         assertEquals(PauseMode.BOTH, opts.getPauseMode());
         assertEquals(300, opts.getSegmentPauseThresholdMs());
         assertEquals(100, opts.getTokenPauseThresholdMs());
+        assertNull(opts.getLocale());
     }
 
     @Test
@@ -39,6 +43,17 @@ public class AndroidWhispererOptionsTest {
         assertEquals(PauseMode.TOKEN, custom.getPauseMode());
         assertEquals(500, custom.getSegmentPauseThresholdMs());
         assertEquals(150, custom.getTokenPauseThresholdMs());
+        assertNull(custom.getLocale());
+    }
+
+    @Test
+    public void customConstructor_withLocale_setsLocaleCorrectly() {
+        AndroidWhispererOptions custom = new AndroidWhispererOptions(
+                PauseMode.TOKEN, 500, 150, Locale.GERMAN);
+        assertEquals(PauseMode.TOKEN, custom.getPauseMode());
+        assertEquals(500, custom.getSegmentPauseThresholdMs());
+        assertEquals(150, custom.getTokenPauseThresholdMs());
+        assertEquals(Locale.GERMAN, custom.getLocale());
     }
 
     @Test
@@ -48,6 +63,7 @@ public class AndroidWhispererOptionsTest {
         assertEquals(PauseMode.NONE, zero.getPauseMode());
         assertEquals(0, zero.getSegmentPauseThresholdMs());
         assertEquals(0, zero.getTokenPauseThresholdMs());
+        assertNull(zero.getLocale());
     }
 
     @Test(expected = IllegalArgumentException.class)

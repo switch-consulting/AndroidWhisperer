@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -47,6 +48,7 @@ public final class AndroidWhisperer implements Closeable {
     private final WhisperBridge nativeApi;
     private final List<TranscriptionListener> listeners = new CopyOnWriteArrayList<>();
     private Pointer context;
+    private WhisperModel currentModel;
     private boolean closed;
 
     public AndroidWhisperer() {
@@ -112,6 +114,7 @@ public final class AndroidWhisperer implements Closeable {
             throw new WhisperModelNotAvailable("Model not available: " + resolvedModel);
         }
         File modelFile = ModelManager.ensureModel(context, resolvedModel);
+        this.currentModel = resolvedModel;
         initModelFromFile(modelFile);
     }
 
@@ -205,6 +208,30 @@ public final class AndroidWhisperer implements Closeable {
         return transcribe(samples, AndroidWhispererOptions.defaults());
     }
 
+    private boolean isLocaleSupportedByModel(Locale locale) {
+        if (locale == null) {
+            return false;
+        }
+        if (currentModel != null) {
+            return currentModel.isLocaleSupported(locale);
+        }
+        int isMultilingual = nativeApi.whisper_is_multilingual(context);
+        List<Locale> supported = (isMultilingual == 0)
+                ? WhisperModel.ENGLISH_LOCALES
+                : WhisperModel.MULTILINGUAL_LOCALES;
+
+        String lang = locale.getLanguage();
+        if (lang.isEmpty()) {
+            return false;
+        }
+        for (Locale l : supported) {
+            if (l.getLanguage().equalsIgnoreCase(lang)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Runs transcription and extracts segment- and/or token-level pauses.
      * Samples must already be mono float PCM at 16 kHz.
@@ -219,6 +246,16 @@ public final class AndroidWhisperer implements Closeable {
         }
 
         try {
+            Locale locale = options.getLocale();
+            String languageParam = null;
+            if (locale != null) {
+                if (!isLocaleSupportedByModel(locale)) {
+                    throw new LanguageNotSupportedException(locale,
+                            "Language not supported by current model: " + locale);
+                }
+                languageParam = locale.getLanguage().toLowerCase(Locale.ROOT);
+            }
+
             boolean tokenMode = options.getPauseMode() == PauseMode.TOKEN
                     || options.getPauseMode() == PauseMode.BOTH;
 
@@ -226,7 +263,7 @@ public final class AndroidWhisperer implements Closeable {
             if (listeners.isEmpty()) {
                 // Direct fallback path when no listeners are registered
                 status = nativeApi.whisper_bridge_transcribe(
-                        context, samples, samples.length, tokenMode ? 1 : 0);
+                        context, samples, samples.length, tokenMode ? 1 : 0, languageParam);
             } else {
                 // Incremental callback path when listeners are registered
                 final StringBuilder liveTranscript = new StringBuilder();
@@ -234,7 +271,7 @@ public final class AndroidWhisperer implements Closeable {
                 WhisperProgressCallback progressCb = createProgressCallback();
 
                 status = nativeApi.whisper_bridge_transcribe_with_callback(
-                        context, samples, samples.length, tokenMode ? 1 : 0,
+                        context, samples, samples.length, tokenMode ? 1 : 0, languageParam,
                         segmentCb, progressCb, null);
             }
 
@@ -329,11 +366,15 @@ public final class AndroidWhisperer implements Closeable {
             }
 
             String language = "";
-            int langId = nativeApi.whisper_bridge_detect_language(
-                    context, samples, samples.length);
-            if (langId >= 0) {
-                String detected = nativeApi.whisper_lang_str(langId);
-                if (detected != null) language = detected;
+            if (languageParam != null) {
+                language = languageParam;
+            } else {
+                int langId = nativeApi.whisper_bridge_detect_language(
+                        context, samples, samples.length);
+                if (langId >= 0) {
+                    String detected = nativeApi.whisper_lang_str(langId);
+                    if (detected != null) language = detected;
+                }
             }
 
             return new TranscriptionResult(
