@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer.demo;
 
+import java.util.Locale;
+
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
@@ -24,4 +26,5 @@ public interface TranscriptionCallback {
     void onProgress(int progressPercent);
     void onSuccess(TranscriptionResult result);
     void onError(Exception e);
+    default void onLanguageDetected(Locale locale) {}
 }

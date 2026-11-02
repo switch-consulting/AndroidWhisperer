@@ -20,9 +20,12 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.File;
+import java.util.Locale;
 
 import de.switchconsulting.androidwhisperer.AndroidWhisperer;
+import de.switchconsulting.androidwhisperer.AndroidWhispererOptions;
 import de.switchconsulting.androidwhisperer.ModelManager;
+import de.switchconsulting.androidwhisperer.PauseMode;
 import de.switchconsulting.androidwhisperer.TranscriptionException;
 import de.switchconsulting.androidwhisperer.TranscriptionListener;
 import de.switchconsulting.androidwhisperer.WhisperModel;
@@ -35,10 +38,14 @@ public class TranscriptionManager {
 
     @SuppressWarnings("unused")
     public static void transcribeAudio(final Context context, final File pcmFile, final TranscriptionCallback callback) {
-        transcribeAudio(context, WhisperModel.TINY, pcmFile, callback);
+        transcribeAudio(context, WhisperModel.TINY, null, pcmFile, callback);
     }
 
     public static void transcribeAudio(final Context context, final WhisperModel model, final File pcmFile, final TranscriptionCallback callback) {
+        transcribeAudio(context, model, null, pcmFile, callback);
+    }
+
+    public static void transcribeAudio(final Context context, final WhisperModel model, final Locale locale, final File pcmFile, final TranscriptionCallback callback) {
         new Thread(() -> {
             WhisperModel selectedModel = (model != null) ? model : WhisperModel.TINY;
             if (!ModelManager.isModelAvailable(context, selectedModel)) {
@@ -70,11 +77,20 @@ public class TranscriptionManager {
                             callback.onError(exception);
                         }
                     }
+
+                    @Override
+                    public void onLanguageDetected(Locale detectedLocale) {
+                        if (callback != null) {
+                            callback.onLanguageDetected(detectedLocale);
+                        }
+                    }
                 });
                 whisperer.init(context, selectedModel);
 
                 float[] samples = AudioRecorder.convertPcmToFloat(pcmFile);
-                TranscriptionResult result = whisperer.transcribe(samples);
+                AndroidWhispererOptions options = new AndroidWhispererOptions(
+                        PauseMode.BOTH, 300, 100, locale);
+                TranscriptionResult result = whisperer.transcribe(samples, options);
 
                 if (callback != null) {
                     callback.onSuccess(result);

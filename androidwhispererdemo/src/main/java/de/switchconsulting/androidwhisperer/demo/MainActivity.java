@@ -61,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private Spinner spinnerModel;
+    private Spinner spinnerLanguage;
+    private TextView tvDetectedLanguage;
     private Button btnDownloadModel;
     private ProgressBar pbDownload;
     private TextView tvDownloadProgress;
@@ -69,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvResults;
 
     private WhisperModel selectedModel = WhisperModel.TINY;
+    private Locale selectedLocale = null;
     private AudioRecorder audioRecorder;
     private boolean isRecording = false;
 
@@ -78,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         spinnerModel = findViewById(R.id.spinnerModel);
+        spinnerLanguage = findViewById(R.id.spinnerLanguage);
+        tvDetectedLanguage = findViewById(R.id.tvDetectedLanguage);
         btnDownloadModel = findViewById(R.id.btnDownloadModel);
         pbDownload = findViewById(R.id.pbDownload);
         tvDownloadProgress = findViewById(R.id.tvDownloadProgress);
@@ -88,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
         audioRecorder = new AudioRecorder();
 
         setupSpinner();
+        setupLanguageSpinner();
 
         btnDownloadModel.setOnClickListener(v -> downloadSelectedModel());
 
@@ -96,6 +102,36 @@ public class MainActivity extends AppCompatActivity {
                 checkPermissionAndStartRecording();
             } else {
                 stopRecordingAndTranscribe();
+            }
+        });
+    }
+
+    private void setupLanguageSpinner() {
+        List<String> languages = new ArrayList<>();
+        languages.add(getString(R.string.language_none));
+        languages.add(getString(R.string.language_english));
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                languages
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerLanguage.setAdapter(adapter);
+
+        spinnerLanguage.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 1) {
+                    selectedLocale = Locale.ENGLISH;
+                } else {
+                    selectedLocale = null;
+                }
+                tvDetectedLanguage.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
             }
         });
     }
@@ -252,10 +288,12 @@ public class MainActivity extends AppCompatActivity {
             audioRecorder.startRecording(getCacheDir());
             isRecording = true;
             spinnerModel.setEnabled(false);
+            spinnerLanguage.setEnabled(false);
             btnDownloadModel.setEnabled(false);
             btnRecord.setText(R.string.stop_recording);
             tvStatus.setText(R.string.status_recording);
             tvResults.setText(R.string.recording_audio_speak_now);
+            tvDetectedLanguage.setVisibility(View.GONE);
         } catch (Exception e) {
             Toast.makeText(this, getString(R.string.recording_failed, e.getMessage()), Toast.LENGTH_LONG).show();
         }
@@ -270,12 +308,13 @@ public class MainActivity extends AppCompatActivity {
 
         if (pcmFile == null || !pcmFile.exists() || pcmFile.length() == 0) {
             spinnerModel.setEnabled(true);
+            spinnerLanguage.setEnabled(true);
             tvStatus.setText(R.string.status_ready);
             tvResults.setText(R.string.error_no_audio_recorded);
             return;
         }
 
-        TranscriptionManager.transcribeAudio(this, selectedModel, pcmFile, new TranscriptionCallback() {
+        TranscriptionManager.transcribeAudio(this, selectedModel, selectedLocale, pcmFile, new TranscriptionCallback() {
             @Override
             public void onNewSegment(final SegmentResult segment, final String accumulatedTranscript) {
                 runOnUiThread(() -> tvResults.setText(getString(R.string.live_transcription_header, selectedModel.getVariant(), accumulatedTranscript)));
@@ -287,9 +326,22 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onLanguageDetected(final Locale locale) {
+                runOnUiThread(() -> {
+                    if (locale != null) {
+                        tvDetectedLanguage.setText(getString(R.string.detected_language,
+                                locale.getDisplayLanguage(Locale.ENGLISH),
+                                locale.getLanguage()));
+                        tvDetectedLanguage.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+
+            @Override
             public void onSuccess(final TranscriptionResult result) {
                 runOnUiThread(() -> {
                     spinnerModel.setEnabled(true);
+                    spinnerLanguage.setEnabled(true);
                     tvStatus.setText(R.string.status_ready);
                     StringBuilder sb = new StringBuilder();
                     sb.append("--- Transcription Text (").append(selectedModel.getVariant()).append(") ---\n");
@@ -323,6 +375,7 @@ public class MainActivity extends AppCompatActivity {
             public void onError(final Exception e) {
                 runOnUiThread(() -> {
                     spinnerModel.setEnabled(true);
+                    spinnerLanguage.setEnabled(true);
                     tvStatus.setText(R.string.status_ready);
                     String errorMsg = e != null ? e.getMessage() : "";
                     tvResults.setText(getString(R.string.error_during_transcription, errorMsg));

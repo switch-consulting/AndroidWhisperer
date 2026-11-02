@@ -11,6 +11,10 @@
     <string name="status_download_error">Download error</string>
 
     <string name="label_select_model">Select Whisper Model:</string>
+    <string name="label_select_language">Language:</string>
+    <string name="language_none">None (Auto-detect)</string>
+    <string name="language_english">English</string>
+    <string name="detected_language">Detected language: %1$s (%2$s)</string>
     <string name="download_model">Download Model</string>
     <string name="btn_download_model_variant">Download %1$s Model</string>
 

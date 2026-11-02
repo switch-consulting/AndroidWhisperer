@@ -18,6 +18,8 @@ package de.switchconsulting.androidwhisperer;
 
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 
+import java.util.Locale;
+
 /**
  * Listener interface for receiving incremental updates during audio transcription.
  */
@@ -44,4 +46,13 @@ public interface TranscriptionListener {
      * @param exception the transcription exception detailing the error
      */
     void onError(TranscriptionException exception);
+
+    /**
+     * Called when Whisper auto-detects the spoken language during transcription.
+     * Not called if a language was pre-defined in transcription options.
+     *
+     * @param locale the detected language locale
+     */
+    default void onLanguageDetected(Locale locale) {
+    }
 }

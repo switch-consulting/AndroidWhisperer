@@ -87,6 +87,16 @@ public final class AndroidWhisperer implements Closeable {
         }
     }
 
+    private void notifyListenersLanguageDetected(Locale locale) {
+        for (TranscriptionListener l : listeners) {
+            try {
+                l.onLanguageDetected(locale);
+            } catch (Exception ignored) {
+                // Prevent listener errors from masking transcription execution
+            }
+        }
+    }
+
     /**
      * Initializes the engine with the default model ({@link WhisperModel#TINY}).
      *
@@ -254,6 +264,17 @@ public final class AndroidWhisperer implements Closeable {
                             "Language not supported by current model: " + locale);
                 }
                 languageParam = locale.getLanguage().toLowerCase(Locale.ROOT);
+            } else {
+                int langId = nativeApi.whisper_bridge_detect_language(
+                        context, samples, samples.length);
+                if (langId >= 0) {
+                    String detected = nativeApi.whisper_lang_str(langId);
+                    if (detected != null && !detected.isEmpty()) {
+                        languageParam = detected;
+                        Locale detectedLocale = Locale.forLanguageTag(detected);
+                        notifyListenersLanguageDetected(detectedLocale);
+                    }
+                }
             }
 
             boolean tokenMode = options.getPauseMode() == PauseMode.TOKEN
@@ -365,17 +386,7 @@ public final class AndroidWhisperer implements Closeable {
                 previousSegmentEnd = Math.max(previousSegmentEnd, end);
             }
 
-            String language = "";
-            if (languageParam != null) {
-                language = languageParam;
-            } else {
-                int langId = nativeApi.whisper_bridge_detect_language(
-                        context, samples, samples.length);
-                if (langId >= 0) {
-                    String detected = nativeApi.whisper_lang_str(langId);
-                    if (detected != null) language = detected;
-                }
-            }
+            String language = languageParam != null ? languageParam : "";
 
             return new TranscriptionResult(
                     transcript.toString().trim(), language, segments, allPauses);

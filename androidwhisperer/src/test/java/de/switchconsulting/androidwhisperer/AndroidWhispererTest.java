@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -166,6 +167,7 @@ public class AndroidWhispererTest {
 
         AtomicBoolean segmentCalled = new AtomicBoolean(false);
         AtomicInteger lastProgress = new AtomicInteger(0);
+        AtomicReference<Locale> detectedLocaleRef = new AtomicReference<>();
 
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
@@ -186,12 +188,18 @@ public class AndroidWhispererTest {
                 public void onError(TranscriptionException exception) {
                     fail("Unexpected transcription error: " + exception.getMessage());
                 }
+
+                @Override
+                public void onLanguageDetected(Locale locale) {
+                    detectedLocaleRef.set(locale);
+                }
             });
 
             TranscriptionResult result = w.transcribe(new float[]{0.1f});
             assertNotNull(result);
             assertTrue(segmentCalled.get());
             assertEquals(50, lastProgress.get());
+            assertEquals(Locale.ENGLISH, detectedLocaleRef.get());
         }
     }
 
@@ -204,6 +212,8 @@ public class AndroidWhispererTest {
                     String name = method.getName();
                     if (name.equals("whisper_init_from_file")) {
                         return new Pointer(999L);
+                    } else if (name.equals("whisper_bridge_detect_language")) {
+                        return -1;
                     } else if (name.equals("whisper_bridge_transcribe")) {
                         return -1;
                     }
@@ -228,6 +238,8 @@ public class AndroidWhispererTest {
                     String name = method.getName();
                     if (name.equals("whisper_init_from_file")) {
                         return new Pointer(999L);
+                    } else if (name.equals("whisper_bridge_detect_language")) {
+                        return -1;
                     } else if (name.equals("whisper_bridge_transcribe_with_callback")) {
                         return -1;
                     }
@@ -510,6 +522,64 @@ public class AndroidWhispererTest {
             AndroidWhispererOptions germanOpts = new AndroidWhispererOptions(
                     PauseMode.BOTH, 300, 100, Locale.GERMAN);
             assertNotNull(w.transcribe(new float[]{0.1f}, germanOpts));
+        }
+    }
+
+    @Test
+    public void transcribe_predefinedLanguage_doesNotNotifyLanguageDetected() {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    switch (name) {
+                        case "whisper_init_from_file":
+                            return new Pointer(999L);
+                        case "whisper_is_multilingual":
+                            return 1;
+                        case "whisper_lang_id":
+                            return "de".equals(args[0]) ? 2 : -1;
+                        case "whisper_bridge_transcribe":
+                            return 0;
+                        case "whisper_bridge_transcribe_with_callback":
+                            return 0;
+                        case "whisper_full_n_segments":
+                            return 0;
+                        case "whisper_free":
+                            return null;
+                        default:
+                            return null;
+                    }
+                });
+
+        AtomicBoolean languageDetectedCalled = new AtomicBoolean(false);
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            w.addListener(new TranscriptionListener() {
+                @Override
+                public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
+                }
+
+                @Override
+                public void onProgress(int progressPercent) {
+                }
+
+                @Override
+                public void onError(TranscriptionException exception) {
+                }
+
+                @Override
+                public void onLanguageDetected(Locale locale) {
+                    languageDetectedCalled.set(true);
+                }
+            });
+
+            AndroidWhispererOptions options = new AndroidWhispererOptions(
+                    PauseMode.BOTH, 300, 100, Locale.GERMAN);
+            TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
+            assertNotNull(result);
+            assertFalse(languageDetectedCalled.get());
         }
     }
 
