@@ -41,6 +41,7 @@ public class TranscriptionManager {
         transcribeAudio(context, WhisperModel.TINY, null, pcmFile, callback);
     }
 
+    @SuppressWarnings("unused")
     public static void transcribeAudio(final Context context, final WhisperModel model, final File pcmFile, final TranscriptionCallback callback) {
         transcribeAudio(context, model, null, pcmFile, callback);
     }
