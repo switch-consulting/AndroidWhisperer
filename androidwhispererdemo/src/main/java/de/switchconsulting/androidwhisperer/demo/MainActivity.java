@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinnerLanguage;
     private TextView tvDetectedLanguage;
     private Button btnDownloadModel;
+    private Button btnRemoveModel;
     private ProgressBar pbDownload;
     private TextView tvDownloadProgress;
     private Button btnRecord;
@@ -84,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
         spinnerLanguage = findViewById(R.id.spinnerLanguage);
         tvDetectedLanguage = findViewById(R.id.tvDetectedLanguage);
         btnDownloadModel = findViewById(R.id.btnDownloadModel);
+        btnRemoveModel = findViewById(R.id.btnRemoveModel);
         pbDownload = findViewById(R.id.pbDownload);
         tvDownloadProgress = findViewById(R.id.tvDownloadProgress);
         btnRecord = findViewById(R.id.btnRecord);
@@ -96,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
         setupLanguageSpinner();
 
         btnDownloadModel.setOnClickListener(v -> downloadSelectedModel());
+        btnRemoveModel.setOnClickListener(v -> removeSelectedModel());
 
         btnRecord.setOnClickListener(v -> {
             if (!isRecording) {
@@ -183,16 +186,27 @@ public class MainActivity extends AppCompatActivity {
         if (selectedModel == null) return;
 
         boolean isDownloaded = ModelManager.isModelDownloaded(this, selectedModel);
+        boolean isDownloadedLocally = ModelManager.isModelDownloadedLocally(this, selectedModel);
+
         if (isDownloaded) {
             btnDownloadModel.setVisibility(View.GONE);
             pbDownload.setVisibility(View.GONE);
             tvDownloadProgress.setVisibility(View.GONE);
             btnRecord.setEnabled(true);
             tvStatus.setText(R.string.status_ready);
+
+            if (isDownloadedLocally) {
+                btnRemoveModel.setVisibility(View.VISIBLE);
+                btnRemoveModel.setEnabled(true);
+                btnRemoveModel.setText(getString(R.string.btn_remove_model_variant, selectedModel.getVariant()));
+            } else {
+                btnRemoveModel.setVisibility(View.GONE);
+            }
         } else {
             btnDownloadModel.setVisibility(View.VISIBLE);
             btnDownloadModel.setEnabled(true);
             btnDownloadModel.setText(getString(R.string.btn_download_model_variant, selectedModel.getVariant()));
+            btnRemoveModel.setVisibility(View.GONE);
             pbDownload.setVisibility(View.GONE);
             tvDownloadProgress.setVisibility(View.GONE);
             btnRecord.setEnabled(false);
@@ -200,10 +214,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void removeSelectedModel() {
+        if (selectedModel == null) return;
+
+        boolean removed = ModelManager.removeModel(this, selectedModel);
+        if (removed) {
+            Toast.makeText(this, getString(R.string.model_removed_success, selectedModel.getVariant()), Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, getString(R.string.model_remove_failed, selectedModel.getVariant()), Toast.LENGTH_SHORT).show();
+        }
+        checkAndShowModelStatus();
+    }
+
     private void downloadSelectedModel() {
         if (selectedModel == null) return;
 
         btnDownloadModel.setEnabled(false);
+        btnRemoveModel.setEnabled(false);
         spinnerModel.setEnabled(false);
         btnRecord.setEnabled(false);
 
@@ -253,6 +280,7 @@ public class MainActivity extends AppCompatActivity {
                     tvDownloadProgress.setText(getString(R.string.download_failed, errorMsg));
                     tvStatus.setText(R.string.status_download_error);
                     Toast.makeText(MainActivity.this, getString(R.string.download_model_failed, errorMsg), Toast.LENGTH_LONG).show();
+                    checkAndShowModelStatus();
                 });
             }
         });
@@ -290,6 +318,7 @@ public class MainActivity extends AppCompatActivity {
             spinnerModel.setEnabled(false);
             spinnerLanguage.setEnabled(false);
             btnDownloadModel.setEnabled(false);
+            btnRemoveModel.setEnabled(false);
             btnRecord.setText(R.string.stop_recording);
             tvStatus.setText(R.string.status_recording);
             tvResults.setText(R.string.recording_audio_speak_now);

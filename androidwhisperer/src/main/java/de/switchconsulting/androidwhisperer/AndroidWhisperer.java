@@ -39,7 +39,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Public Java facade for local whisper.cpp transcription.
- *
  * Native calls on a single engine are serialized. Call expensive operations
  * from a worker thread, not Android's main thread.
  */
@@ -142,6 +141,26 @@ public final class AndroidWhisperer implements Closeable {
     @SuppressWarnings("unused")
     public static boolean isModelDownloaded(Context context, WhisperModel model) {
         return ModelManager.isModelDownloaded(context, model);
+    }
+
+    /**
+     * Checks whether the specified Whisper model file is physically stored on internal device storage.
+     */
+    @SuppressWarnings("unused")
+    public static boolean isModelDownloadedLocally(Context context, WhisperModel model) {
+        return ModelManager.isModelDownloadedLocally(context, model);
+    }
+
+    /**
+     * Removes the specified Whisper model file from internal device storage if present.
+     *
+     * @param context the Android context
+     * @param model the Whisper model to remove
+     * @return true if the model file existed on local storage and was successfully deleted, false otherwise
+     */
+    @SuppressWarnings("unused")
+    public static boolean removeModel(Context context, WhisperModel model) {
+        return ModelManager.removeModel(context, model);
     }
 
     /** Initializes or replaces the current model context using a file path. */

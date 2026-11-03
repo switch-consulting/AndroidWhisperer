@@ -440,4 +440,71 @@ public final class ModelManager {
         Collections.addAll(modelList, files);
         return modelList;
     }
+
+    /**
+     * Checks whether the specified Whisper model file is physically stored on internal device storage.
+     * Unlike {@link #isModelDownloaded(Context, WhisperModel)}, this checks solely for local file presence.
+     *
+     * @param context the Android context
+     * @param model the Whisper model
+     * @return true if the model file exists on local storage and is non-empty, false otherwise
+     */
+    public static boolean isModelDownloadedLocally(Context context, WhisperModel model) {
+        if (context == null || model == null) {
+            return false;
+        }
+        File targetFile = model.getFile(context);
+        return targetFile != null && targetFile.exists() && targetFile.length() > 0;
+    }
+
+    /**
+     * Removes the specified Whisper model file from internal device storage if it exists.
+     *
+     * @param context the Android context
+     * @param model the Whisper model to remove
+     * @return true if the model file existed on local storage and was successfully deleted, false otherwise
+     */
+    public static boolean removeModel(Context context, WhisperModel model) {
+        if (context == null || model == null) {
+            return false;
+        }
+        File targetFile = model.getFile(context);
+        return removeModelFile(targetFile);
+    }
+
+    /**
+     * Removes a model file with the specified filename from internal device storage if it exists.
+     *
+     * @param context the Android context
+     * @param fileName the filename of the model to remove
+     * @return true if the model file existed on local storage and was successfully deleted, false otherwise
+     */
+    public static boolean removeModel(Context context, String fileName) {
+        if (context == null || fileName == null || fileName.trim().isEmpty()) {
+            return false;
+        }
+        File targetFile = new File(getModelsDir(context), fileName.trim());
+        return removeModelFile(targetFile);
+    }
+
+    /**
+     * Removes the specified model file from device storage if it exists.
+     *
+     * @param modelFile the model file to remove
+     * @return true if the model file existed and was successfully deleted, false otherwise
+     */
+    public static boolean removeModelFile(File modelFile) {
+        if (modelFile != null && modelFile.exists()) {
+            return modelFile.delete();
+        }
+        return false;
+    }
+
+    /**
+     * Alias for {@link #removeModel(Context, WhisperModel)}.
+     */
+    @SuppressWarnings("unused")
+    public static boolean deleteModel(Context context, WhisperModel model) {
+        return removeModel(context, model);
+    }
 }

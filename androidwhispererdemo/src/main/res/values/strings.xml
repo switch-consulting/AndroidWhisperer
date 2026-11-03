@@ -17,6 +17,10 @@
     <string name="detected_language">Detected language: %1$s (%2$s)</string>
     <string name="download_model">Download Model</string>
     <string name="btn_download_model_variant">Download %1$s Model</string>
+    <string name="remove_model">Remove Model</string>
+    <string name="btn_remove_model_variant">Remove %1$s Model</string>
+    <string name="model_removed_success">Model %1$s removed from device.</string>
+    <string name="model_remove_failed">Failed to remove model %1$s.</string>
 
     <string name="download_starting">Starting download...</string>
     <string name="download_progress_known">%1$d%% (%2$s / %3$s)</string>

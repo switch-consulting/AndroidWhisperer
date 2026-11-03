@@ -55,6 +55,16 @@
         android:backgroundTint="@android:color/holo_green_dark"
         android:textColor="@android:color/white" />
 
+    <Button
+        android:id="@+id/btnRemoveModel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/remove_model"
+        android:visibility="gone"
+        android:backgroundTint="@android:color/holo_red_dark"
+        android:textColor="@android:color/white" />
+
     <ProgressBar
         android:id="@+id/pbDownload"
         style="?android:attr/progressBarStyleHorizontal"

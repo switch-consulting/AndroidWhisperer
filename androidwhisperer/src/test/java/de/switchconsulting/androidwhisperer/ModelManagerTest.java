@@ -393,4 +393,117 @@ public class ModelManagerTest {
         assertTrue(latch.await(5, java.util.concurrent.TimeUnit.SECONDS));
         assertNotNull(resultError.get());
     }
+
+    @Test
+    public void removeModel_returnsTrueWhenFileExistsAndIsDeleted() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        File modelsDir = ModelManager.getModelsDir(mockContext);
+        File localModel = new File(modelsDir, "ggml-to-delete.bin");
+        try (FileOutputStream out = new FileOutputStream(localModel)) {
+            out.write("fake model data".getBytes());
+        }
+
+        WhisperModel model = new WhisperModel("to-delete", "ggml-to-delete.bin", URI.create("https://example.com/unused").toURL());
+        assertTrue(ModelManager.isModelDownloadedLocally(mockContext, model));
+        assertTrue(localModel.exists());
+
+        boolean removed = ModelManager.removeModel(mockContext, model);
+        assertTrue(removed);
+        assertFalse(localModel.exists());
+        assertFalse(ModelManager.isModelDownloadedLocally(mockContext, model));
+    }
+
+    @Test
+    public void removeModel_returnsFalseWhenFileDoesNotExist() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        WhisperModel model = new WhisperModel("nonexistent", "ggml-nonexistent-file.bin", URI.create("https://example.com/unused").toURL());
+        assertFalse(ModelManager.isModelDownloadedLocally(mockContext, model));
+
+        boolean removed = ModelManager.removeModel(mockContext, model);
+        assertFalse(removed);
+    }
+
+    @Test
+    public void removeModel_returnsFalseForNullContextOrModel() {
+        assertFalse(ModelManager.removeModel(null, WhisperModel.BASE));
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+        assertFalse(ModelManager.removeModel(mockContext, (WhisperModel) null));
+        assertFalse(ModelManager.removeModel(null, (WhisperModel) null));
+        assertFalse(ModelManager.removeModel(null, "some-file.bin"));
+        assertFalse(ModelManager.removeModel(mockContext, (String) null));
+        assertFalse(ModelManager.removeModel(mockContext, "   "));
+        assertFalse(ModelManager.isModelDownloadedLocally(null, WhisperModel.BASE));
+        assertFalse(ModelManager.isModelDownloadedLocally(mockContext, null));
+    }
+
+    @Test
+    public void removeModelByFileName_deletesFile() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        File modelsDir = ModelManager.getModelsDir(mockContext);
+        File localModel = new File(modelsDir, "ggml-by-filename.bin");
+        try (FileOutputStream out = new FileOutputStream(localModel)) {
+            out.write("fake model data".getBytes());
+        }
+
+        assertTrue(localModel.exists());
+        boolean removed = ModelManager.removeModel(mockContext, "ggml-by-filename.bin");
+        assertTrue(removed);
+        assertFalse(localModel.exists());
+    }
+
+    @Test
+    public void removeModelFile_deletesFile() throws Exception {
+        File fileToDelete = temporaryFolder.newFile("test-remove-file.bin");
+        assertTrue(fileToDelete.exists());
+
+        boolean removed = ModelManager.removeModelFile(fileToDelete);
+        assertTrue(removed);
+        assertFalse(fileToDelete.exists());
+
+        assertFalse(ModelManager.removeModelFile(null));
+        assertFalse(ModelManager.removeModelFile(fileToDelete));
+    }
+
+    @Test
+    public void deleteModel_aliasWorks() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        File modelsDir = ModelManager.getModelsDir(mockContext);
+        File localModel = new File(modelsDir, "ggml-alias-delete.bin");
+        try (FileOutputStream out = new FileOutputStream(localModel)) {
+            out.write("fake model data".getBytes());
+        }
+
+        WhisperModel model = new WhisperModel("alias-delete", "ggml-alias-delete.bin", URI.create("https://example.com/unused").toURL());
+        assertTrue(ModelManager.deleteModel(mockContext, model));
+        assertFalse(localModel.exists());
+    }
 }
