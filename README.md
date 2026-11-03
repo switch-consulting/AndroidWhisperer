@@ -44,17 +44,29 @@ dependencies {
 
 ```java
 import de.switchconsulting.androidwhisperer.AndroidWhisperer;
+import de.switchconsulting.androidwhisperer.ModelManager;
 import de.switchconsulting.androidwhisperer.WhisperModel;
 
 AndroidWhisperer whisperer = new AndroidWhisperer();
 
-// Initialize with the default model (WhisperModel.TINY) extracted automatically from assets
-whisperer.init(context);
-continue
-// Or check availability and initialize with a specific model enum
-if (AndroidWhisperer.isModelAvailable(context, WhisperModel.TINY)) {
-    whisperer.init(context, WhisperModel.TINY);
-}
+// Asynchronously download or ensure a model (e.g. WhisperModel.BASE or WhisperModel.TINY)
+ModelManager.ensureModelAsync(context, WhisperModel.BASE, new ModelDownloadListener() {
+    @Override
+    public void onSuccess(File modelFile) {
+        // Model file is downloaded and ready for use
+        whisperer.init(context, WhisperModel.BASE);
+    }
+
+    @Override
+    public void onProgress(long bytesDownloaded, long totalBytes) {
+        // Download progress updates
+    }
+
+    @Override
+    public void onError(Exception error) {
+        // Handle error
+    }
+});
 ```
 
 ### 2. Prepare Audio Samples

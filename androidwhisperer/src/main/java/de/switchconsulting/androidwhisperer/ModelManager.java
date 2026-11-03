@@ -33,8 +33,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Utility class for managing local Whisper model files, extracting models
- * from Android assets, downloading remote models, and listing stored models.
+ * Utility class for managing local Whisper model files, downloading remote models,
+ * and listing stored models.
  */
 public final class ModelManager {
 
@@ -60,7 +60,7 @@ public final class ModelManager {
     }
 
     /**
-     * Checks whether the specified Whisper model is available (present locally, in assets,
+     * Checks whether the specified Whisper model is available (present locally
      * or downloadable via a download URL).
      */
     public static boolean isModelAvailable(Context context, WhisperModel model) {
@@ -74,51 +74,24 @@ public final class ModelManager {
             return true;
         }
 
-        // Otherwise check if it can be opened from assets (if isAsset() is true)
-        if (model.isAsset()) {
-            try (InputStream ignored = context.getAssets().open(model.getAssetPath())) {
-                return true;
-            } catch (IOException e) {
-                // Asset not accessible; fall through to check download URL
-            }
-        }
-
         // Otherwise check if a download URL is available
         String downloadUrl = model.getDownloadUrl();
         return downloadUrl != null && !downloadUrl.trim().isEmpty();
     }
 
     /**
-     * Checks whether the specified Whisper model is already downloaded locally on device storage
-     * or accessible from app assets.
+     * Checks whether the specified Whisper model is already downloaded locally on device storage.
      *
      * @param context the Android context
      * @param model the Whisper model
-     * @return true if the model file is available locally or in assets, false otherwise
+     * @return true if the model file is available locally, false otherwise
      */
     public static boolean isModelDownloaded(Context context, WhisperModel model) {
-        if (context == null || model == null) {
-            return false;
-        }
-
-        File targetFile = model.getFile(context);
-        if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
-            return true;
-        }
-
-        if (model.isAsset()) {
-            try (InputStream ignored = context.getAssets().open(model.getAssetPath())) {
-                return true;
-            } catch (IOException ignored) {
-            }
-        }
-
-        return false;
+        return isModelDownloadedLocally(context, model);
     }
 
     /**
-     * Ensures the specified Whisper model is available locally, extracted from assets,
-     * or downloaded to internal storage.
+     * Ensures the specified Whisper model is available locally, or downloaded to internal storage.
      * Throws {@link WhisperModelNotAvailable} if the model is unavailable and cannot be downloaded.
      */
     public static File ensureModel(Context context, WhisperModel model) throws IOException {
@@ -134,17 +107,6 @@ public final class ModelManager {
             return targetFile;
         }
 
-        if (model.isAsset()) {
-            try {
-                return ensureModelFromAssets(context, model.getAssetPath());
-            } catch (IOException e) {
-                // If asset extraction fails, try downloading if a download URL exists
-                if (model.getDownloadUrl() == null || model.getDownloadUrl().trim().isEmpty()) {
-                    throw e;
-                }
-            }
-        }
-
         String downloadUrl = model.getDownloadUrl();
         if (downloadUrl != null && !downloadUrl.trim().isEmpty()) {
             downloadModelFromUrl(downloadUrl, targetFile, model.getDownloadSize(), null);
@@ -152,7 +114,7 @@ public final class ModelManager {
         }
 
         throw new WhisperModelNotAvailable(
-                "Model not available locally, in assets, or via download URL: " + model.getVariant());
+                "Model not available locally or via download URL: " + model.getVariant());
     }
 
     private static final ExecutorService DOWNLOAD_EXECUTOR =
@@ -160,7 +122,7 @@ public final class ModelManager {
 
     /**
      * Asynchronously ensures the specified Whisper model is available locally,
-     * extracted from assets, or downloaded to internal storage.
+     * or downloaded to internal storage.
      *
      * @param context the Android context
      * @param model the Whisper model
@@ -187,18 +149,6 @@ public final class ModelManager {
                     return;
                 }
 
-                if (model.isAsset()) {
-                    try {
-                        File extractedFile = ensureModelFromAssets(context, model.getAssetPath());
-                        listener.onSuccess(extractedFile);
-                        return;
-                    } catch (IOException e) {
-                        if (model.getDownloadUrl() == null || model.getDownloadUrl().trim().isEmpty()) {
-                            throw e;
-                        }
-                    }
-                }
-
                 String downloadUrl = model.getDownloadUrl();
                 if (downloadUrl != null && !downloadUrl.trim().isEmpty()) {
                     downloadModelFromUrl(downloadUrl, targetFile, model.getDownloadSize(), listener);
@@ -207,7 +157,7 @@ public final class ModelManager {
                 }
 
                 throw new WhisperModelNotAvailable(
-                        "Model not available locally, in assets, or via download URL: " + model.getVariant());
+                        "Model not available locally or via download URL: " + model.getVariant());
             } catch (Exception e) {
                 listener.onError(e);
             }
@@ -248,55 +198,6 @@ public final class ModelManager {
                 listener.onError(e);
             }
         });
-    }
-
-    /**
-     * Ensures an asset model (e.g. "models/ggml-tiny.bin" or "ggml-tiny.bin")
-     * is extracted to internal storage. Returns the target {@link File}.
-     */
-    public static File ensureModelFromAssets(Context context, String assetPath)
-            throws IOException {
-        if (context == null) {
-            throw new IllegalArgumentException("context == null");
-        }
-        if (assetPath == null || assetPath.trim().isEmpty()) {
-            throw new IllegalArgumentException("assetPath is empty");
-        }
-
-        String fileName = new File(assetPath).getName();
-        File targetFile = new File(getModelsDir(context), fileName);
-
-        if (!targetFile.exists() || targetFile.length() == 0) {
-            copyAssetToFile(context, assetPath, targetFile);
-        }
-
-        return targetFile;
-    }
-
-    /**
-     * Copies an asset file to a specified target file.
-     */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static void copyAssetToFile(
-            Context context, String assetPath, File targetFile) throws IOException {
-        if (context == null || targetFile == null) {
-            throw new IllegalArgumentException("Context and targetFile must not be null");
-        }
-
-        File parent = targetFile.getParentFile();
-        if (parent != null && !parent.exists()) {
-            parent.mkdirs();
-        }
-
-        try (InputStream in = context.getAssets().open(assetPath);
-             OutputStream out = new FileOutputStream(targetFile)) {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-            out.flush();
-        }
     }
 
     /**

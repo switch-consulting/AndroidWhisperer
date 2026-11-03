@@ -100,7 +100,7 @@ public final class AndroidWhisperer implements Closeable {
      * Initializes the engine with the default model ({@link WhisperModel#TINY}).
      *
      * @param context the Android application context
-     * @throws IOException if extracting the model asset fails
+     * @throws IOException if obtaining or downloading the model fails
      * @throws WhisperModelNotAvailable if the model is not available
      */
     public synchronized void init(Context context) throws IOException {
@@ -113,7 +113,7 @@ public final class AndroidWhisperer implements Closeable {
      *
      * @param context the Android application context
      * @param model the Whisper model enum value
-     * @throws IOException if extracting the model asset fails
+     * @throws IOException if obtaining or downloading the model fails
      * @throws WhisperModelNotAvailable if the model is not available or not supported
      */
     public synchronized void init(Context context, WhisperModel model) throws IOException {
@@ -136,7 +136,7 @@ public final class AndroidWhisperer implements Closeable {
     }
 
     /**
-     * Checks whether the specified Whisper model is downloaded locally on device storage or in assets.
+     * Checks whether the specified Whisper model is downloaded locally on device storage.
      */
     @SuppressWarnings("unused")
     public static boolean isModelDownloaded(Context context, WhisperModel model) {
@@ -184,20 +184,6 @@ public final class AndroidWhisperer implements Closeable {
         if (previous != null) {
             nativeApi.whisper_free(previous);
         }
-    }
-
-    /**
-     * Initializes the engine with a model extracted from Android assets.
-     *
-     * @param context the Android application context
-     * @param assetPath relative path inside assets, e.g. "models/ggml-tiny.bin"
-     * @throws IOException if extracting the asset fails
-     */
-    @SuppressWarnings("unused")
-    public synchronized void initModelFromAsset(Context context, String assetPath)
-            throws IOException {
-        File modelFile = ModelManager.ensureModelFromAssets(context, assetPath);
-        initModelFromFile(modelFile);
     }
 
     /**

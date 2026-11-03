@@ -23,7 +23,6 @@ import org.junit.rules.TemporaryFolder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -42,17 +41,17 @@ public class ModelManagerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void whisperModel_throwsOnNullVariant() {
-        new WhisperModel(null, "file.bin", "models/file.bin");
+        new WhisperModel(null, "file.bin");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void whisperModel_throwsOnEmptyVariant() {
-        new WhisperModel("   ", "file.bin", "models/file.bin");
+        new WhisperModel("   ", "file.bin");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void whisperModel_throwsOnNullFileName() {
-        new WhisperModel("variant", null, "models/file.bin");
+        new WhisperModel("variant", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -60,31 +59,17 @@ public class ModelManagerTest {
         ModelManager.getModelsDir(null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void ensureModelFromAssets_throwsOnNullContext() throws Exception {
-        ModelManager.ensureModelFromAssets(null, "models/ggml-tiny.bin");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void copyAssetToFile_throwsOnNullTargetFile() throws Exception {
-        ModelManager.copyAssetToFile(null, "path", null);
-    }
-
     @Test
     public void whisperModel_properties() {
         assertEquals("tiny", WhisperModel.TINY.getVariant());
         assertEquals("ggml-tiny.bin", WhisperModel.TINY.getFileName());
-        assertEquals("models/ggml-tiny.bin", WhisperModel.TINY.getAssetPath());
         assertEquals("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin", WhisperModel.TINY.getDownloadUrl());
         assertEquals(77691713L, WhisperModel.TINY.getDownloadSize());
-        assertTrue(WhisperModel.TINY.isAsset());
 
         assertEquals("base", WhisperModel.BASE.getVariant());
         assertEquals("ggml-base.bin", WhisperModel.BASE.getFileName());
-        assertNull(WhisperModel.BASE.getAssetPath());
         assertEquals("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin", WhisperModel.BASE.getDownloadUrl());
         assertEquals(147951465L, WhisperModel.BASE.getDownloadSize());
-        assertFalse(WhisperModel.BASE.isAsset());
     }
 
     @Test
@@ -138,9 +123,9 @@ public class ModelManagerTest {
             assertFalse(m.isLanguageSupported("de"));
         }
 
-        // Custom model with explicit locales (testing different constructor overloads)
+        // Custom model with explicit locales
         List<Locale> customLocales = Arrays.asList(Locale.GERMAN, Locale.FRENCH);
-        WhisperModel customModel1 = new WhisperModel("custom-de-fr", "file.bin", "models/file.bin", customLocales);
+        WhisperModel customModel1 = new WhisperModel("custom-de-fr", "file.bin", customLocales);
         assertEquals(2, customModel1.getSupportedLocales().size());
         assertTrue(customModel1.isLocaleSupported(Locale.GERMAN));
 
@@ -150,11 +135,8 @@ public class ModelManagerTest {
         WhisperModel customModel3 = new WhisperModel("custom-url-size", "file.bin", URI.create("https://example.com/file.bin").toURL(), 1234L, customLocales);
         assertEquals(2, customModel3.getSupportedLocales().size());
 
-        WhisperModel customModel4 = new WhisperModel("custom-full", "file.bin", "models/file.bin", URI.create("https://example.com/file.bin").toURL(), 1234L, customLocales);
-        assertEquals(2, customModel4.getSupportedLocales().size());
-
         // Custom model with auto-detected english variant
-        WhisperModel customEnModel = new WhisperModel("my-model.en", "file.bin", "models/file.bin");
+        WhisperModel customEnModel = new WhisperModel("my-model.en", "file.bin");
         assertEquals(1, customEnModel.getSupportedLocales().size());
         assertTrue(customEnModel.isLocaleSupported(Locale.ENGLISH));
         assertFalse(customEnModel.isLocaleSupported(Locale.GERMAN));
@@ -195,25 +177,13 @@ public class ModelManagerTest {
 
         assertEquals("custom", customModel.getVariant());
         assertEquals("ggml-custom.bin", customModel.getFileName());
-        assertNull(customModel.getAssetPath());
         assertEquals("https://example.com/ggml-custom.bin", customModel.getDownloadUrl());
-        assertFalse(customModel.isAsset());
         assertNotNull(customModel.getLocalFile(new android.content.ContextWrapper(null) {
             @Override
             public File getFilesDir() {
                 return temporaryFolder.getRoot();
             }
         }));
-    }
-
-    @Test
-    public void customWhisperModel_assetInstantiation() {
-        WhisperModel customAssetModel = new WhisperModel("custom-asset", "ggml-custom.bin", "models/ggml-custom.bin");
-
-        assertEquals("custom-asset", customAssetModel.getVariant());
-        assertEquals("ggml-custom.bin", customAssetModel.getFileName());
-        assertEquals("models/ggml-custom.bin", customAssetModel.getAssetPath());
-        assertTrue(customAssetModel.isAsset());
     }
 
     @Test(expected = IOException.class)
