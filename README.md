@@ -68,37 +68,6 @@ dependencies {
 
 ---
 
-## Publishing
-
-The project uses the Vanniktech Gradle Maven Publish Plugin with Sonatype Central Portal and PGP signing.
-
-### Prerequisites
-
-Define your credentials in `~/.gradle/gradle.properties` (or `C:\Users\<user>\.gradle\gradle.properties`):
-
-```properties
-# Sonatype Central Portal User Token
-mavenCentralUsername=YOUR_TOKEN_USERNAME
-mavenCentralPassword=YOUR_TOKEN_PASSWORD
-
-# PGP Signing Key & Passphrase
-signing.key=-----BEGIN PGP PRIVATE KEY BLOCK-----\n...\n-----END PGP PRIVATE KEY BLOCK-----
-signing.password=YOUR_PGP_PASSPHRASE
-```
-
-### Publishing Commands
-
-| Destination | Command / Task | Description |
-| :--- | :--- | :--- |
-| **Local Maven repository** (`~/.m2`) | `.\gradlew :androidwhisperer:publishToMavenLocal` | Builds and installs the library to your local Maven cache. |
-| **Maven Central Snapshots** | `.\gradlew :androidwhisperer:publish` | When `VERSION_NAME` in `gradle.properties` ends with `-SNAPSHOT`, publishes signed artifacts to `https://central.sonatype.com/repository/maven-snapshots/`. |
-| **Maven Central Releases** | `.\gradlew :androidwhisperer:publish` | When `VERSION_NAME` is a release (e.g. `0.1.0`), creates a portal bundle and uploads to Maven Central Portal with automatic release. |
-
-> [!TIP]
-> In Android Studio, these tasks can also be run from the **Gradle** tool window under `:androidwhisperer` ➔ `Tasks` ➔ `publishing`.
-
----
-
 ## Usage
 
 ### 0. Add Dependency (Releases & Snapshots)
@@ -130,7 +99,31 @@ dependencies {
 }
 ```
 
-### 1. Initialize the Engine
+---
+
+## Predefined Models
+
+The library includes built-in configurations via `WhisperModel` that point to quantized ggml model binaries hosted on Hugging Face:
+
+| Constant | Variant | Approx. Disk Size | Languages | Recommended Purpose & Performance |
+| :--- | :--- | :--- | :--- | :--- |
+| `WhisperModel.TINY` | `tiny` | ~75 MB | Multilingual (99+ langs) | Fastest on-device inference, minimal RAM/disk footprint; ideal for lower-end devices or quick commands. |
+| `WhisperModel.TINY_EN` | `tiny.en` | ~75 MB | English only | Optimized English model with speed matching `tiny` and higher English accuracy. |
+| `WhisperModel.BASE` | `base` | ~142 MB | Multilingual (99+ langs) | **Recommended default**: Great trade-off between speed, memory usage, and transcription accuracy. |
+| `WhisperModel.BASE_EN` | `base.en` | ~142 MB | English only | Better English accuracy than `tiny.en` while remaining very fast on modern smartphones. |
+| `WhisperModel.SMALL` | `small` | ~465 MB | Multilingual (99+ langs) | Substantially higher accuracy for complex audio, accents, and diverse vocabularies; requires more RAM and CPU/GPU. |
+| `WhisperModel.SMALL_EN` | `small.en` | ~465 MB | English only | High-accuracy transcription tailored strictly for English speech. |
+| `WhisperModel.MEDIUM` | `medium` | ~1.5 GB | Multilingual (99+ langs) | High accuracy; recommended only for modern flagship devices with ample RAM and storage. |
+| `WhisperModel.MEDIUM_EN` | `medium.en` | ~1.5 GB | English only | English-only counterpart of `medium`. |
+| `WhisperModel.LARGE` | `large` | ~2.9 GB | Multilingual (99+ langs) | Maximum Whisper accuracy; very demanding on mobile resources. |
+
+---
+
+## Code Examples
+
+### Java Example
+
+#### 1. Initialize the Engine
 
 ```java
 import de.switchconsulting.androidwhisperer.AndroidWhisperer;
@@ -159,60 +152,128 @@ ModelManager.ensureModelAsync(context, WhisperModel.BASE, new ModelDownloadListe
 });
 ```
 
-### 2. Prepare Audio Samples
-
-Whisper requires mono PCM float samples normalized to `[-1.0, 1.0]` at 16,000 Hz. Use `AudioUtils` to convert WAV files or PCM buffers:
+#### 2. Prepare Audio & Transcribe
 
 ```java
 import de.switchconsulting.androidwhisperer.AudioUtils;
-import java.io.File;
-
-// Load a 16-bit WAV file directly
-float[] samples = AudioUtils.readWav(new File("/path/to/audio.wav"));
-
-// Or convert raw PCM16 bytes (e.g., from AudioRecord at 44.1 kHz stereo)
-byte[] pcmBytes = ...;
-float[] normalizedSamples = AudioUtils.fromPcm16(pcmBytes, 44100, 2);
-```
-
-### 3. Transcribe Audio
-
-```java
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
+import java.io.File;
 
-// Execute transcription
+// Load a 16-bit WAV file or convert raw PCM16 bytes
+float[] samples = AudioUtils.readWav(new File("/path/to/audio.wav"));
+
+// Transcribe
 TranscriptionResult result = whisperer.transcribe(samples);
-
 System.out.println("Language: " + result.getLanguage());
 System.out.println("Text: " + result.getText());
 
-// Access segment-level details
+// Access segment-level details & detected pauses
 for (SegmentResult segment : result.getSegments()) {
     System.out.println(String.format("[%d ms - %d ms]: %s",
             segment.getStartMs(), segment.getEndMs(), segment.getText()));
 }
 
-// Access detected pause/silence intervals
-for (PauseSegment pause : result.getPauses()) {
-    System.out.println(String.format("Pause of %d ms at %d ms",
-            pause.getDurationMs(), pause.getStartMs()));
-}
-```
+// Language auto-detection
+String lang = whisperer.detectLanguage(samples);
 
-### 4. Language Auto-Detection
-
-```java
-String detectedLanguage = whisperer.detectLanguage(samples);
-System.out.println("Detected language: " + detectedLanguage); // e.g., "en", "de", "fr"
-```
-
-### 5. Cleanup Resources
-
-```java
-// Close the engine when done to release native context memory
+// Cleanup
 whisperer.close();
+```
+
+---
+
+### Kotlin Example
+
+#### 1. Initialize the Engine
+
+```kotlin
+import de.switchconsulting.androidwhisperer.AndroidWhisperer
+import de.switchconsulting.androidwhisperer.ModelDownloadListener
+import de.switchconsulting.androidwhisperer.ModelManager
+import de.switchconsulting.androidwhisperer.WhisperModel
+import java.io.File
+
+val whisperer = AndroidWhisperer()
+
+ModelManager.ensureModelAsync(context, WhisperModel.BASE, object : ModelDownloadListener {
+    override fun onSuccess(modelFile: File) {
+        // Initialize the native engine once the model file is available
+        whisperer.init(context, WhisperModel.BASE)
+    }
+
+    override fun onProgress(bytesDownloaded: Long, totalBytes: Long) {
+        val progress = if (totalBytes > 0) (bytesDownloaded * 100 / totalBytes).toInt() else 0
+        println("Download progress: $progress%")
+    }
+
+    override fun onError(error: Exception) {
+        error.printStackTrace()
+    }
+})
+```
+
+#### 2. Prepare Audio & Transcribe
+
+```kotlin
+import de.switchconsulting.androidwhisperer.AudioUtils
+import java.io.File
+
+// Load WAV audio (automatically resampled & normalized to 16 kHz mono float)
+val samples = AudioUtils.readWav(File("/path/to/audio.wav"))
+
+// Or convert raw PCM bytes from an AudioRecord buffer:
+// val samples = AudioUtils.fromPcm16(pcmBytes, sampleRate = 44100, channels = 2)
+
+// Run transcription (best called on a background thread/coroutine dispatcher)
+val result = whisperer.transcribe(samples)
+
+println("Detected Language: ${result.language}")
+println("Full Text: ${result.text}")
+
+// Inspect segments with timestamps
+result.segments.forEach { segment ->
+    println("[${segment.startMs} ms - ${segment.endMs} ms]: ${segment.text}")
+}
+
+// Inspect silence/pause intervals
+result.pauses.forEach { pause ->
+    println("Pause of ${pause.durationMs} ms at ${pause.startMs} ms")
+}
+
+// Detect language standalone
+val detectedLang = whisperer.detectLanguage(samples)
+println("Detected language: $detectedLang")
+
+// Always close the engine when done to free native memory
+whisperer.close()
+```
+
+#### 3. Using with Coroutines (Idiomatic Kotlin)
+
+```kotlin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
+// Awaiting model download as a suspending function:
+suspend fun ensureModel(context: Context, model: WhisperModel): File =
+    suspendCancellableCoroutine { continuation ->
+        ModelManager.ensureModelAsync(context, model, object : ModelDownloadListener {
+            override fun onSuccess(modelFile: File) = continuation.resume(modelFile)
+            override fun onProgress(bytesDownloaded: Long, totalBytes: Long) {}
+            override fun onError(error: Exception) = continuation.resumeWithException(error)
+        })
+    }
+
+// Offloading transcription to Dispatchers.Default / IO:
+suspend fun transcribeAudio(whisperer: AndroidWhisperer, samples: FloatArray) =
+    withContext(Dispatchers.Default) {
+        whisperer.transcribe(samples)
+    }
 ```
 
 ---
