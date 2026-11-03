@@ -22,13 +22,43 @@
 
 ### Gradle Dependency
 
-Include the `:androidwhisperer` module in your project's `settings.gradle`:
+#### 1. From Maven Central (Releases & Snapshots)
+
+In your `settings.gradle` (or root `build.gradle`), ensure Maven Central and the Sonatype Snapshot repository are declared:
+
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+        }
+    }
+}
+```
+
+Then add the dependency to your app module's `build.gradle`:
+
+```groovy
+dependencies {
+    // Release version:
+    implementation 'de.switch-consulting:androidwhisperer:0.1.0'
+
+    // Or latest Snapshot:
+    // implementation 'de.switch-consulting:androidwhisperer:0.1.0-SNAPSHOT'
+}
+```
+
+#### 2. Project / Submodule Dependency
+
+Alternatively, if including the project source directly, include the `:androidwhisperer` module in `settings.gradle`:
 
 ```groovy
 include ':androidwhisperer'
 ```
 
-And add the dependency to your app module's `build.gradle`:
+And in your app module's `build.gradle`:
 
 ```groovy
 dependencies {
@@ -38,7 +68,67 @@ dependencies {
 
 ---
 
+## Publishing
+
+The project uses the Vanniktech Gradle Maven Publish Plugin with Sonatype Central Portal and PGP signing.
+
+### Prerequisites
+
+Define your credentials in `~/.gradle/gradle.properties` (or `C:\Users\<user>\.gradle\gradle.properties`):
+
+```properties
+# Sonatype Central Portal User Token
+mavenCentralUsername=YOUR_TOKEN_USERNAME
+mavenCentralPassword=YOUR_TOKEN_PASSWORD
+
+# PGP Signing Key & Passphrase
+signing.key=-----BEGIN PGP PRIVATE KEY BLOCK-----\n...\n-----END PGP PRIVATE KEY BLOCK-----
+signing.password=YOUR_PGP_PASSPHRASE
+```
+
+### Publishing Commands
+
+| Destination | Command / Task | Description |
+| :--- | :--- | :--- |
+| **Local Maven repository** (`~/.m2`) | `.\gradlew :androidwhisperer:publishToMavenLocal` | Builds and installs the library to your local Maven cache. |
+| **Maven Central Snapshots** | `.\gradlew :androidwhisperer:publish` | When `VERSION_NAME` in `gradle.properties` ends with `-SNAPSHOT`, publishes signed artifacts to `https://central.sonatype.com/repository/maven-snapshots/`. |
+| **Maven Central Releases** | `.\gradlew :androidwhisperer:publish` | When `VERSION_NAME` is a release (e.g. `0.1.0`), creates a portal bundle and uploads to Maven Central Portal with automatic release. |
+
+> [!TIP]
+> In Android Studio, these tasks can also be run from the **Gradle** tool window under `:androidwhisperer` ➔ `Tasks` ➔ `publishing`.
+
+---
+
 ## Usage
+
+### 0. Add Dependency (Releases & Snapshots)
+
+In your `settings.gradle`:
+
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        // Required for SNAPSHOT builds:
+        maven {
+            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+        }
+    }
+}
+```
+
+In your app's `build.gradle`:
+
+```groovy
+dependencies {
+    // Current snapshot:
+    implementation 'de.switch-consulting:androidwhisperer:0.1.0-SNAPSHOT'
+
+    // Or release (when published):
+    // implementation 'de.switch-consulting:androidwhisperer:0.1.0'
+}
+```
 
 ### 1. Initialize the Engine
 
