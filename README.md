@@ -4,8 +4,9 @@
 
 ## Goals & Features
 
-- **Local & Offline Speech Recognition**: Run OpenAI's Whisper models locally on Android devices without server dependencies.
-- **On-Device C++ Inference via CMake**: Bundles the native `whisper.cpp` C/C++ engine compiled directly for Android ABIs (`arm64-v8a`, `armeabi-v7a`, `x86_64`).
+- **Local & Offline Speech Recognition**: Run OpenAI's Whisper models locally on Android devices without server dependencies or cloud latency.
+- **Ready-to-Use with Pre-Compiled Binaries**: Bundles pre-compiled native `whisper.cpp` engines optimized for **64-bit architectures** (`arm64-v8a` and `x86_64`). *Note: 32-bit architectures (`armeabi-v7a`, `x86`) are excluded as Whisper relies heavily on 64-bit ARM NEON/SIMD optimizations.* No native compilation or NDK is required for app developers.
+- **Built-in Model Management**: Easily download, verify, and manage quantized GGML models ready-to-use via `ModelManager` and `WhisperModel`.
 - **Language Auto-Detection**: Detect spoken languages directly from PCM sample arrays.
 - **Timestamp & Pause Analysis**: Extract segment-level and token-level timestamps, as well as automatic pause/silence analysis between speech segments or tokens.
 - **Audio Utilities**: Built-in WAV parser and PCM converter/resampler (`AudioUtils`) converting PCM16/float audio to 16 kHz mono float PCM required by Whisper.
@@ -16,9 +17,9 @@
 
 ### Requirements
 
-- Android SDK API 23 (Android 6.0) or higher
-- Android NDK (installed via Android Studio SDK Manager)
-- Java 17
+- **Android SDK API 24** (Android 7.0) or higher
+- **Java 17** source/target compatibility
+- **Android NDK**: *Only required if you are building the library or native C++ from source.* Regular app consumers do **not** need the NDK installed.
 
 ### Gradle Dependency
 
