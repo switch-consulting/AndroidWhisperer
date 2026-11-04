@@ -34,12 +34,12 @@ public class TranscriptionResultTest {
         assertEquals("Hi", tr.getText());
         assertEquals("en", tr.getLanguage());
         assertEquals(1, tr.getSegments().size());
-        assertEquals(1, tr.getPauses().size());
+        assertEquals(1, tr.getAllPauses().size());
 
         TranscriptionResult nullSafe = new TranscriptionResult(null, null, null, null);
         assertEquals("", nullSafe.getText());
         assertEquals("", nullSafe.getLanguage());
         assertNotNull(nullSafe.getSegments());
-        assertNotNull(nullSafe.getPauses());
+        assertNotNull(nullSafe.getAllPauses());
     }
 }

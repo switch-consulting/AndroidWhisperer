@@ -78,5 +78,5 @@ public final class SegmentResult {
      *
      * @return unmodifiable list of pause segments
      */
-    public List<PauseSegment> getPauses() { return pauses; }
+    public List<PauseSegment> getSegmentPauses() { return pauses; }
 }

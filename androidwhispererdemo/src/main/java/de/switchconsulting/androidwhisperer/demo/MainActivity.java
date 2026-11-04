@@ -386,7 +386,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     sb.append("\n--- Pause Segments ---\n");
-                    List<PauseSegment> pauses = result.getPauses();
+                    List<PauseSegment> pauses = result.getAllPauses();
                     if (pauses != null && !pauses.isEmpty()) {
                         for (PauseSegment pause : pauses) {
                             sb.append("Pause: ").append(pause.getDurationMs()).append("ms at ")

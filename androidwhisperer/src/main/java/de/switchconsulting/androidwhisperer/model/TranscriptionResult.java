@@ -79,5 +79,5 @@ public final class TranscriptionResult {
      *
      * @return unmodifiable list of pause segments
      */
-    public List<PauseSegment> getPauses() { return pauses; }
+    public List<PauseSegment> getAllPauses() { return pauses; }
 }

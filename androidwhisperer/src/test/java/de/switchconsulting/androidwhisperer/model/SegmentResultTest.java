@@ -33,11 +33,11 @@ public class SegmentResultTest {
         assertEquals("Hello", segment.getText());
         assertEquals(0, segment.getStartMs());
         assertEquals(200, segment.getEndMs());
-        assertEquals(1, segment.getPauses().size());
+        assertEquals(1, segment.getSegmentPauses().size());
 
         SegmentResult nullSafe = new SegmentResult(null, 0, 100, null);
         assertEquals("", nullSafe.getText());
-        assertNotNull(nullSafe.getPauses());
+        assertNotNull(nullSafe.getSegmentPauses());
     }
 
     @Test
