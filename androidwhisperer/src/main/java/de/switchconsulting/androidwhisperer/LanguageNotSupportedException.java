@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.Nullable;
+
 import java.util.Locale;
 
 /**
@@ -30,7 +32,7 @@ public class LanguageNotSupportedException extends TranscriptionException {
      *
      * @param message the detail message
      */
-    public LanguageNotSupportedException(String message) {
+    public LanguageNotSupportedException(@Nullable String message) {
         super(message);
         this.locale = null;
     }
@@ -40,7 +42,7 @@ public class LanguageNotSupportedException extends TranscriptionException {
      *
      * @param locale the unsupported locale
      */
-    public LanguageNotSupportedException(Locale locale) {
+    public LanguageNotSupportedException(@Nullable Locale locale) {
         super("Language not supported for locale: " + (locale != null ? locale : "null"));
         this.locale = locale;
     }
@@ -51,7 +53,7 @@ public class LanguageNotSupportedException extends TranscriptionException {
      * @param locale the unsupported locale
      * @param message the detail message
      */
-    public LanguageNotSupportedException(Locale locale, String message) {
+    public LanguageNotSupportedException(@Nullable Locale locale, @Nullable String message) {
         super(message);
         this.locale = locale;
     }
@@ -62,7 +64,7 @@ public class LanguageNotSupportedException extends TranscriptionException {
      * @param message the detail message
      * @param cause the cause
      */
-    public LanguageNotSupportedException(String message, Throwable cause) {
+    public LanguageNotSupportedException(@Nullable String message, @Nullable Throwable cause) {
         super(message, cause);
         this.locale = null;
     }
@@ -72,6 +74,7 @@ public class LanguageNotSupportedException extends TranscriptionException {
      *
      * @return the locale
      */
+    @Nullable
     public Locale getLocale() {
         return locale;
     }

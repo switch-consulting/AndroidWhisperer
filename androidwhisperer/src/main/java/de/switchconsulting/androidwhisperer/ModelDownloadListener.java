@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 
 /**
@@ -37,12 +39,12 @@ public interface ModelDownloadListener {
      *
      * @param modelFile the local model file on the device
      */
-    void onSuccess(File modelFile);
+    void onSuccess(@NonNull File modelFile);
 
     /**
      * Called when an error occurs during model download or extraction.
      *
      * @param error the exception encountered
      */
-    void onError(Exception error);
+    void onError(@NonNull Exception error);
 }

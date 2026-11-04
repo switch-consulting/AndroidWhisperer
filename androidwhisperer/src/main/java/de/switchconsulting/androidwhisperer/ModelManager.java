@@ -18,6 +18,9 @@ package de.switchconsulting.androidwhisperer;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -47,11 +50,9 @@ public final class ModelManager {
     /**
      * Returns the internal storage directory where model files are saved.
      */
+    @NonNull
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static File getModelsDir(Context context) {
-        if (context == null) {
-            throw new IllegalArgumentException("context == null");
-        }
+    public static File getModelsDir(@NonNull Context context) {
         File dir = new File(context.getFilesDir(), DEFAULT_MODELS_DIR);
         if (!dir.exists()) {
             dir.mkdirs();
@@ -63,14 +64,14 @@ public final class ModelManager {
      * Checks whether the specified Whisper model is available (present locally
      * or downloadable via a download URL).
      */
-    public static boolean isModelAvailable(Context context, WhisperModel model) {
+    public static boolean isModelAvailable(@Nullable Context context, @Nullable WhisperModel model) {
         if (context == null || model == null) {
             return false;
         }
 
         // Check if model file already exists locally
         File targetFile = model.getFile(context);
-        if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
+        if (targetFile.exists() && targetFile.length() > 0) {
             return true;
         }
 
@@ -86,7 +87,7 @@ public final class ModelManager {
      * @param model the Whisper model
      * @return true if the model file is available locally, false otherwise
      */
-    public static boolean isModelDownloaded(Context context, WhisperModel model) {
+    public static boolean isModelDownloaded(@Nullable Context context, @Nullable WhisperModel model) {
         return isModelDownloadedLocally(context, model);
     }
 
@@ -94,16 +95,10 @@ public final class ModelManager {
      * Ensures the specified Whisper model is available locally, or downloaded to internal storage.
      * Throws {@link WhisperModelNotAvailable} if the model is unavailable and cannot be downloaded.
      */
-    public static File ensureModel(Context context, WhisperModel model) throws IOException {
-        if (context == null) {
-            throw new IllegalArgumentException("context == null");
-        }
-        if (model == null) {
-            throw new IllegalArgumentException("model == null");
-        }
-
+    @NonNull
+    public static File ensureModel(@NonNull Context context, @NonNull WhisperModel model) throws IOException {
         File targetFile = model.getFile(context);
-        if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
+        if (targetFile.exists() && targetFile.length() > 0) {
             return targetFile;
         }
 
@@ -129,7 +124,7 @@ public final class ModelManager {
      * @param listener callback listener for progress, success, or error
      */
     public static void ensureModelAsync(
-            Context context, WhisperModel model, ModelDownloadListener listener) {
+            @Nullable Context context, @Nullable WhisperModel model, @Nullable ModelDownloadListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("listener == null");
         }
@@ -144,7 +139,7 @@ public final class ModelManager {
         DOWNLOAD_EXECUTOR.execute(() -> {
             try {
                 File targetFile = model.getFile(context);
-                if (targetFile != null && targetFile.exists() && targetFile.length() > 0) {
+                if (targetFile.exists() && targetFile.length() > 0) {
                     listener.onSuccess(targetFile);
                     return;
                 }
@@ -172,7 +167,7 @@ public final class ModelManager {
      * @param listener callback listener for progress, success, or error
      */
     public static void downloadModelAsync(
-            Context context, WhisperModel model, ModelDownloadListener listener) {
+            @Nullable Context context, @Nullable WhisperModel model, @Nullable ModelDownloadListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("listener == null");
         }
@@ -203,7 +198,7 @@ public final class ModelManager {
     /**
      * Downloads a model file from the specified HTTP/HTTPS URL into targetFile.
      */
-    public static void downloadModelFromUrl(String urlString, File targetFile) throws IOException {
+    public static void downloadModelFromUrl(@NonNull String urlString, @NonNull File targetFile) throws IOException {
         downloadModelFromUrl(urlString, targetFile, -1L, null);
     }
 
@@ -212,15 +207,11 @@ public final class ModelManager {
      */
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void downloadModelFromUrl(
-            String urlString, File targetFile, long expectedSize, ModelDownloadListener listener)
+            @NonNull String urlString, @NonNull File targetFile, long expectedSize, @Nullable ModelDownloadListener listener)
             throws IOException {
-        if (urlString == null || urlString.trim().isEmpty()) {
+        if (urlString.trim().isEmpty()) {
             throw new IllegalArgumentException("urlString is empty");
         }
-        if (targetFile == null) {
-            throw new IllegalArgumentException("targetFile == null");
-        }
-
         File parent = targetFile.getParentFile();
         if (parent != null && !parent.exists()) {
             parent.mkdirs();
@@ -330,8 +321,9 @@ public final class ModelManager {
     /**
      * Returns a list of all model files currently stored in internal storage.
      */
+    @NonNull
     @SuppressWarnings("unused")
-    public static List<File> listLocalModels(Context context) {
+    public static List<File> listLocalModels(@NonNull Context context) {
         File dir = getModelsDir(context);
         File[] files = dir.listFiles((d, name) -> name.endsWith(".bin"));
         if (files == null || files.length == 0) {
@@ -350,12 +342,12 @@ public final class ModelManager {
      * @param model the Whisper model
      * @return true if the model file exists on local storage and is non-empty, false otherwise
      */
-    public static boolean isModelDownloadedLocally(Context context, WhisperModel model) {
+    public static boolean isModelDownloadedLocally(@Nullable Context context, @Nullable WhisperModel model) {
         if (context == null || model == null) {
             return false;
         }
         File targetFile = model.getFile(context);
-        return targetFile != null && targetFile.exists() && targetFile.length() > 0;
+        return targetFile.exists() && targetFile.length() > 0;
     }
 
     /**
@@ -365,7 +357,7 @@ public final class ModelManager {
      * @param model the Whisper model to remove
      * @return true if the model file existed on local storage and was successfully deleted, false otherwise
      */
-    public static boolean removeModel(Context context, WhisperModel model) {
+    public static boolean removeModel(@Nullable Context context, @Nullable WhisperModel model) {
         if (context == null || model == null) {
             return false;
         }
@@ -380,7 +372,7 @@ public final class ModelManager {
      * @param fileName the filename of the model to remove
      * @return true if the model file existed on local storage and was successfully deleted, false otherwise
      */
-    public static boolean removeModel(Context context, String fileName) {
+    public static boolean removeModel(@Nullable Context context, @Nullable String fileName) {
         if (context == null || fileName == null || fileName.trim().isEmpty()) {
             return false;
         }
@@ -394,7 +386,7 @@ public final class ModelManager {
      * @param modelFile the model file to remove
      * @return true if the model file existed and was successfully deleted, false otherwise
      */
-    public static boolean removeModelFile(File modelFile) {
+    public static boolean removeModelFile(@Nullable File modelFile) {
         if (modelFile != null && modelFile.exists()) {
             return modelFile.delete();
         }
@@ -405,7 +397,7 @@ public final class ModelManager {
      * Alias for {@link #removeModel(Context, WhisperModel)}.
      */
     @SuppressWarnings("unused")
-    public static boolean deleteModel(Context context, WhisperModel model) {
+    public static boolean deleteModel(@Nullable Context context, @Nullable WhisperModel model) {
         return removeModel(context, model);
     }
 }

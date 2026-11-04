@@ -16,6 +16,9 @@
 
 package de.switchconsulting.androidwhisperer.model;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,8 +42,8 @@ public final class SegmentResult {
      * @param pauses list of token pauses within this segment
      */
     public SegmentResult(
-            String text, long startMs, long endMs,
-            List<PauseSegment> pauses) {
+            @Nullable String text, long startMs, long endMs,
+            @Nullable List<PauseSegment> pauses) {
         if (startMs < 0 || endMs < startMs) {
             throw new IllegalArgumentException("Invalid segment interval");
         }
@@ -57,6 +60,7 @@ public final class SegmentResult {
      *
      * @return segment text
      */
+    @NonNull
     public String getText() { return text; }
 
     /**
@@ -78,5 +82,6 @@ public final class SegmentResult {
      *
      * @return unmodifiable list of pause segments
      */
+    @NonNull
     public List<PauseSegment> getSegmentPauses() { return pauses; }
 }

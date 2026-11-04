@@ -114,6 +114,7 @@ mavenPublishing {
 
 dependencies {
     implementation 'net.java.dev.jna:jna:5.19.1@aar'
+    implementation 'androidx.annotation:annotation:1.9.1'
     implementation libs.appcompat
     implementation libs.material
     testImplementation libs.junit

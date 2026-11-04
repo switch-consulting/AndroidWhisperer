@@ -16,6 +16,9 @@
 
 package de.switchconsulting.androidwhisperer.model;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,10 +42,10 @@ public final class TranscriptionResult {
      * @param pauses list of detected pause intervals ({@link PauseSegment})
      */
     public TranscriptionResult(
-            String text,
-            String language,
-            List<SegmentResult> segments,
-            List<PauseSegment> pauses) {
+            @Nullable String text,
+            @Nullable String language,
+            @Nullable List<SegmentResult> segments,
+            @Nullable List<PauseSegment> pauses) {
         this.text = text == null ? "" : text;
         this.language = language == null ? "" : language;
         this.segments = Collections.unmodifiableList(
@@ -58,6 +61,7 @@ public final class TranscriptionResult {
      *
      * @return full transcript text
      */
+    @NonNull
     public String getText() { return text; }
 
     /**
@@ -65,6 +69,7 @@ public final class TranscriptionResult {
      *
      * @return language code
      */
+    @NonNull
     public String getLanguage() { return language; }
 
     /**
@@ -72,6 +77,7 @@ public final class TranscriptionResult {
      *
      * @return unmodifiable list of segment results
      */
+    @NonNull
     public List<SegmentResult> getSegments() { return segments; }
 
     /**
@@ -79,5 +85,6 @@ public final class TranscriptionResult {
      *
      * @return unmodifiable list of pause segments
      */
+    @NonNull
     public List<PauseSegment> getAllPauses() { return pauses; }
 }

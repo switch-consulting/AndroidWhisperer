@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.Nullable;
+
 /**
  * Exception thrown when an error occurs during audio transcription.
  */
@@ -26,7 +28,7 @@ public class TranscriptionException extends RuntimeException {
      *
      * @param message the detail message
      */
-    public TranscriptionException(String message) {
+    public TranscriptionException(@Nullable String message) {
         super(message);
     }
 
@@ -36,7 +38,7 @@ public class TranscriptionException extends RuntimeException {
      * @param message the detail message
      * @param cause the cause
      */
-    public TranscriptionException(String message, Throwable cause) {
+    public TranscriptionException(@Nullable String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 
@@ -45,7 +47,7 @@ public class TranscriptionException extends RuntimeException {
      *
      * @param cause the cause
      */
-    public TranscriptionException(Throwable cause) {
+    public TranscriptionException(@Nullable Throwable cause) {
         super(cause);
     }
 }

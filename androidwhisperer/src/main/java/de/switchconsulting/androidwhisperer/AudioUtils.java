@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.NonNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,7 +44,8 @@ public final class AudioUtils {
      * @return mono float PCM samples at 16 kHz
      * @throws IOException if the file cannot be read or has an unsupported format
      */
-    public static float[] readWav(File file) throws IOException {
+    @NonNull
+    public static float[] readWav(@NonNull File file) throws IOException {
         byte[] bytes;
         try (InputStream in = new FileInputStream(file);
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -128,10 +131,9 @@ public final class AudioUtils {
      * @param channels number of interleaved channels
      * @return mono float PCM samples at 16 kHz
      */
+    @NonNull
     public static float[] fromPcm16(
-            byte[] pcm, int sourceRate, int channels) {
-
-        if (pcm == null) throw new IllegalArgumentException("pcm == null");
+            @NonNull byte[] pcm, int sourceRate, int channels) {
         if (sourceRate <= 0 || channels <= 0) {
             throw new IllegalArgumentException(
                     "Sample rate and channel count must be positive");
@@ -167,12 +169,9 @@ public final class AudioUtils {
      * @param channels number of interleaved channels
      * @return mono float PCM samples at 16 kHz
      */
+    @NonNull
     public static float[] fromFloatPcm(
-            float[] interleaved, int sourceRate, int channels) {
-
-        if (interleaved == null) {
-            throw new IllegalArgumentException("interleaved == null");
-        }
+            @NonNull float[] interleaved, int sourceRate, int channels) {
         if (sourceRate <= 0 || channels <= 0
                 || interleaved.length % channels != 0) {
             throw new IllegalArgumentException("Invalid audio format");
@@ -206,10 +205,9 @@ public final class AudioUtils {
      * @param targetRate target sample rate in Hz
      * @return resampled audio float array
      */
+    @NonNull
     public static float[] resample(
-            float[] input, int sourceRate, int targetRate) {
-
-        if (input == null) throw new IllegalArgumentException("input == null");
+            @NonNull float[] input, int sourceRate, int targetRate) {
         if (sourceRate <= 0 || targetRate <= 0) {
             throw new IllegalArgumentException("Invalid sample rate");
         }

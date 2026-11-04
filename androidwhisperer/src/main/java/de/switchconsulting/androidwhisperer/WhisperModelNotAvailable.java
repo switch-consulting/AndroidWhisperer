@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.Nullable;
+
 /**
  * Exception thrown when a requested Whisper model is not available or not supported.
  */
@@ -26,7 +28,7 @@ public class WhisperModelNotAvailable extends RuntimeException {
      *
      * @param message the detail message
      */
-    public WhisperModelNotAvailable(String message) {
+    public WhisperModelNotAvailable(@Nullable String message) {
         super(message);
     }
 
@@ -36,7 +38,7 @@ public class WhisperModelNotAvailable extends RuntimeException {
      * @param message the detail message
      * @param cause the cause
      */
-    public WhisperModelNotAvailable(String message, Throwable cause) {
+    public WhisperModelNotAvailable(@Nullable String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

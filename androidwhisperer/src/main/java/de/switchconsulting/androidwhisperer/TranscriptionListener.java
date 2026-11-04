@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.NonNull;
+
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
@@ -32,7 +34,7 @@ public interface TranscriptionListener {
      * @param segment the newly decoded segment details
      * @param accumulatedTranscript the full accumulated transcript text up to this segment
      */
-    void onNewSegment(SegmentResult segment, String accumulatedTranscript);
+    void onNewSegment(@NonNull SegmentResult segment, @NonNull String accumulatedTranscript);
 
     /**
      * Called periodically during transcription with overall progress percentage (0 to 100).
@@ -46,7 +48,7 @@ public interface TranscriptionListener {
      *
      * @param exception the transcription exception detailing the error
      */
-    void onError(TranscriptionException exception);
+    void onError(@NonNull TranscriptionException exception);
 
     /**
      * Called when Whisper auto-detects the spoken language during transcription.
@@ -54,7 +56,7 @@ public interface TranscriptionListener {
      *
      * @param locale the detected language locale
      */
-    default void onLanguageDetected(Locale locale) {
+    default void onLanguageDetected(@NonNull Locale locale) {
     }
 
     /**
@@ -62,6 +64,6 @@ public interface TranscriptionListener {
      *
      * @param result the complete transcription result
      */
-    default void onTranscriptionCompleted(TranscriptionResult result) {
+    default void onTranscriptionCompleted(@NonNull TranscriptionResult result) {
     }
 }

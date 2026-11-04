@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer.model;
 
+import androidx.annotation.NonNull;
+
 /**
  * A detected silent interval between two speech boundaries.
  */
@@ -33,12 +35,9 @@ public final class PauseSegment {
      * @param endMs end time in milliseconds
      * @param level the pause granularity level ({@link PauseLevel})
      */
-    public PauseSegment(long startMs, long endMs, PauseLevel level) {
+    public PauseSegment(long startMs, long endMs, @NonNull PauseLevel level) {
         if (startMs < 0 || endMs < startMs) {
             throw new IllegalArgumentException("Invalid pause interval");
-        }
-        if (level == null) {
-            throw new IllegalArgumentException("level == null");
         }
 
         this.startMs = startMs;
@@ -73,5 +72,6 @@ public final class PauseSegment {
      *
      * @return pause level
      */
+    @NonNull
     public PauseLevel getLevel() { return level; }
 }

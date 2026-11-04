@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.NonNull;
+
 import com.sun.jna.Pointer;
 
 import org.junit.Test;
@@ -173,7 +175,7 @@ public class AndroidWhispererTest {
             w.initModelFromFile(new File("dummy.bin"));
             w.addListener(new TranscriptionListener() {
                 @Override
-                public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
+                public void onNewSegment(@NonNull SegmentResult segment, @NonNull String accumulatedTranscript) {
                     segmentCalled.set(true);
                     assertEquals("Incremental text", segment.getText());
                     assertEquals("Incremental text", accumulatedTranscript);
@@ -185,12 +187,12 @@ public class AndroidWhispererTest {
                 }
 
                 @Override
-                public void onError(TranscriptionException exception) {
+                public void onError(@NonNull TranscriptionException exception) {
                     fail("Unexpected transcription error: " + exception.getMessage());
                 }
 
                 @Override
-                public void onLanguageDetected(Locale locale) {
+                public void onLanguageDetected(@NonNull Locale locale) {
                     detectedLocaleRef.set(locale);
                 }
             });
@@ -252,7 +254,7 @@ public class AndroidWhispererTest {
             w.initModelFromFile(new File("dummy.bin"));
             w.addListener(new TranscriptionListener() {
                 @Override
-                public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
+                public void onNewSegment(@NonNull SegmentResult segment, @NonNull String accumulatedTranscript) {
                 }
 
                 @Override
@@ -260,7 +262,7 @@ public class AndroidWhispererTest {
                 }
 
                 @Override
-                public void onError(TranscriptionException exception) {
+                public void onError(@NonNull TranscriptionException exception) {
                     errorCalled.set(true);
                     assertEquals("Whisper inference failed with code -1", exception.getMessage());
                 }
@@ -471,7 +473,7 @@ public class AndroidWhispererTest {
             w.initModelFromFile(new File("dummy.bin"));
             w.addListener(new TranscriptionListener() {
                 @Override
-                public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
+                public void onNewSegment(@NonNull SegmentResult segment, @NonNull String accumulatedTranscript) {
                 }
 
                 @Override
@@ -479,7 +481,7 @@ public class AndroidWhispererTest {
                 }
 
                 @Override
-                public void onError(TranscriptionException exception) {
+                public void onError(@NonNull TranscriptionException exception) {
                     listenerNotified.set(true);
                     assertTrue(exception instanceof LanguageNotSupportedException);
                     assertEquals(Locale.GERMAN, ((LanguageNotSupportedException) exception).getLocale());
@@ -558,7 +560,7 @@ public class AndroidWhispererTest {
             w.initModelFromFile(new File("dummy.bin"));
             w.addListener(new TranscriptionListener() {
                 @Override
-                public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
+                public void onNewSegment(@NonNull SegmentResult segment, @NonNull String accumulatedTranscript) {
                 }
 
                 @Override
@@ -566,11 +568,11 @@ public class AndroidWhispererTest {
                 }
 
                 @Override
-                public void onError(TranscriptionException exception) {
+                public void onError(@NonNull TranscriptionException exception) {
                 }
 
                 @Override
-                public void onLanguageDetected(Locale locale) {
+                public void onLanguageDetected(@NonNull Locale locale) {
                     languageDetectedCalled.set(true);
                 }
             });

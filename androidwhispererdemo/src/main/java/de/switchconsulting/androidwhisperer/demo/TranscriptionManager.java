@@ -19,6 +19,8 @@ package de.switchconsulting.androidwhisperer.demo;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -61,7 +63,7 @@ public class TranscriptionManager {
                 if (callback != null) {
                     whisperer.addListener(new TranscriptionListener() {
                         @Override
-                        public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
+                        public void onNewSegment(@NonNull SegmentResult segment, @NonNull String accumulatedTranscript) {
                             callback.onNewSegment(segment, accumulatedTranscript);
                         }
 
@@ -71,17 +73,17 @@ public class TranscriptionManager {
                         }
 
                         @Override
-                        public void onError(TranscriptionException exception) {
+                        public void onError(@NonNull TranscriptionException exception) {
                             callback.onError(exception);
                         }
 
                         @Override
-                        public void onLanguageDetected(Locale detectedLocale) {
+                        public void onLanguageDetected(@NonNull Locale detectedLocale) {
                             callback.onLanguageDetected(detectedLocale);
                         }
 
                         @Override
-                        public void onTranscriptionCompleted(TranscriptionResult result) {
+                        public void onTranscriptionCompleted(@NonNull TranscriptionResult result) {
                             callback.onTranscriptionCompleted(result);
                         }
                     });

@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.NonNull;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -160,10 +162,10 @@ public class ModelManagerTest {
             }
 
             @Override
-            public void onSuccess(File modelFile) {}
+            public void onSuccess(@NonNull File modelFile) {}
 
             @Override
-            public void onError(Exception error) {}
+            public void onError(@NonNull Exception error) {}
         };
 
         listener.onProgress(1000L, 5000L);
@@ -288,13 +290,13 @@ public class ModelManagerTest {
 
         ModelManager.ensureModelAsync(mockContext, model, new ModelDownloadListener() {
             @Override
-            public void onSuccess(File modelFile) {
+            public void onSuccess(@NonNull File modelFile) {
                 resultFile.set(modelFile);
                 latch.countDown();
             }
 
             @Override
-            public void onError(Exception error) {
+            public void onError(@NonNull Exception error) {
                 latch.countDown();
             }
         });
@@ -319,12 +321,12 @@ public class ModelManagerTest {
 
         ModelManager.ensureModelAsync(mockContext, nonExistentModel, new ModelDownloadListener() {
             @Override
-            public void onSuccess(File modelFile) {
+            public void onSuccess(@NonNull File modelFile) {
                 latch.countDown();
             }
 
             @Override
-            public void onError(Exception error) {
+            public void onError(@NonNull Exception error) {
                 resultError.set(error);
                 latch.countDown();
             }
@@ -349,12 +351,12 @@ public class ModelManagerTest {
 
         ModelManager.downloadModelAsync(mockContext, invalidModel, new ModelDownloadListener() {
             @Override
-            public void onSuccess(File modelFile) {
+            public void onSuccess(@NonNull File modelFile) {
                 latch.countDown();
             }
 
             @Override
-            public void onError(Exception error) {
+            public void onError(@NonNull Exception error) {
                 resultError.set(error);
                 latch.countDown();
             }

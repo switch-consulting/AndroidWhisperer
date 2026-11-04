@@ -17,9 +17,9 @@
 package de.switchconsulting.androidwhisperer;
 
 import android.content.Context;
-import android.os.Build;
 
-import androidx.annotation.RequiresApi;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.sun.jna.Pointer;
 
@@ -67,14 +67,14 @@ public final class AndroidWhisperer implements Closeable {
     }
 
     /** Registers a listener for incremental transcription updates. */
-    public void addListener(TranscriptionListener listener) {
+    public void addListener(@Nullable TranscriptionListener listener) {
         if (listener != null) {
             listeners.add(listener);
         }
     }
 
     /** Unregisters a previously added listener. */
-    public void removeListener(TranscriptionListener listener) {
+    public void removeListener(@Nullable TranscriptionListener listener) {
         if (listener != null) {
             listeners.remove(listener);
         }
@@ -117,7 +117,7 @@ public final class AndroidWhisperer implements Closeable {
      * @throws IOException if obtaining or downloading the model fails
      * @throws WhisperModelNotAvailable if the model is not available
      */
-    public synchronized void init(Context context) throws IOException {
+    public synchronized void init(@NonNull Context context) throws IOException {
         init(context, WhisperModel.TINY);
     }
 
@@ -130,7 +130,7 @@ public final class AndroidWhisperer implements Closeable {
      * @throws IOException if obtaining or downloading the model fails
      * @throws WhisperModelNotAvailable if the model is not available or not supported
      */
-    public synchronized void init(Context context, WhisperModel model) throws IOException {
+    public synchronized void init(@NonNull Context context, @Nullable WhisperModel model) throws IOException {
         ensureOpen();
         WhisperModel resolvedModel = (model == null) ? WhisperModel.TINY : model;
         if (!ModelManager.isModelAvailable(context, resolvedModel)) {
@@ -145,7 +145,7 @@ public final class AndroidWhisperer implements Closeable {
      * Checks whether the specified Whisper model is available.
      */
     @SuppressWarnings("unused")
-    public static boolean isModelAvailable(Context context, WhisperModel model) {
+    public static boolean isModelAvailable(@Nullable Context context, @Nullable WhisperModel model) {
         return ModelManager.isModelAvailable(context, model);
     }
 
@@ -153,7 +153,7 @@ public final class AndroidWhisperer implements Closeable {
      * Checks whether the specified Whisper model is downloaded locally on device storage.
      */
     @SuppressWarnings("unused")
-    public static boolean isModelDownloaded(Context context, WhisperModel model) {
+    public static boolean isModelDownloaded(@Nullable Context context, @Nullable WhisperModel model) {
         return ModelManager.isModelDownloaded(context, model);
     }
 
@@ -161,7 +161,7 @@ public final class AndroidWhisperer implements Closeable {
      * Checks whether the specified Whisper model file is physically stored on internal device storage.
      */
     @SuppressWarnings("unused")
-    public static boolean isModelDownloadedLocally(Context context, WhisperModel model) {
+    public static boolean isModelDownloadedLocally(@Nullable Context context, @Nullable WhisperModel model) {
         return ModelManager.isModelDownloadedLocally(context, model);
     }
 
@@ -173,7 +173,7 @@ public final class AndroidWhisperer implements Closeable {
      * @return true if the model file existed on local storage and was successfully deleted, false otherwise
      */
     @SuppressWarnings("unused")
-    public static boolean removeModel(Context context, WhisperModel model) {
+    public static boolean removeModel(@Nullable Context context, @Nullable WhisperModel model) {
         return ModelManager.removeModel(context, model);
     }
 
@@ -205,15 +205,13 @@ public final class AndroidWhisperer implements Closeable {
      *
      * @param modelFile the local model file
      */
-    public synchronized void initModelFromFile(File modelFile) {
-        if (modelFile == null) {
-            throw new IllegalArgumentException("modelFile == null");
-        }
+    public synchronized void initModelFromFile(@NonNull File modelFile) {
         initModel(modelFile.getAbsolutePath());
     }
 
     /** Detects language and returns its code, e.g. "en" or "de". */
-    public synchronized String detectLanguage(float[] samples) {
+    @NonNull
+    public synchronized String detectLanguage(@NonNull float[] samples) {
         requireModel();
         validateSamples(samples);
 
@@ -233,7 +231,8 @@ public final class AndroidWhisperer implements Closeable {
     }
 
     /** Transcribes audio with the default pause-analysis options. */
-    public synchronized TranscriptionResult transcribe(float[] samples) {
+    @NonNull
+    public synchronized TranscriptionResult transcribe(@NonNull float[] samples) {
         return transcribe(samples, AndroidWhispererOptions.defaults());
     }
 
@@ -243,8 +242,8 @@ public final class AndroidWhisperer implements Closeable {
      * @param samples mono float PCM audio samples at 16 kHz
      * @return a CompletableFuture resolving to the transcription result
      */
-    @RequiresApi(Build.VERSION_CODES.N)
-    public CompletableFuture<TranscriptionResult> transcribeAsync(float[] samples) {
+    @NonNull
+    public CompletableFuture<TranscriptionResult> transcribeAsync(@NonNull float[] samples) {
         return CompletableFuture.supplyAsync(() -> transcribe(samples));
     }
 
@@ -255,9 +254,9 @@ public final class AndroidWhisperer implements Closeable {
      * @param options transcription options
      * @return a CompletableFuture resolving to the transcription result
      */
-    @RequiresApi(Build.VERSION_CODES.N)
+    @NonNull
     public CompletableFuture<TranscriptionResult> transcribeAsync(
-            float[] samples, AndroidWhispererOptions options) {
+            @NonNull float[] samples, @Nullable AndroidWhispererOptions options) {
         return CompletableFuture.supplyAsync(() -> transcribe(samples, options));
     }
 
@@ -289,8 +288,9 @@ public final class AndroidWhisperer implements Closeable {
      * Runs transcription and extracts segment- and/or token-level pauses.
      * Samples must already be mono float PCM at 16 kHz.
      */
+    @NonNull
     public synchronized TranscriptionResult transcribe(
-            float[] samples, AndroidWhispererOptions options) {
+            @NonNull float[] samples, @Nullable AndroidWhispererOptions options) {
         requireModel();
         validateSamples(samples);
 

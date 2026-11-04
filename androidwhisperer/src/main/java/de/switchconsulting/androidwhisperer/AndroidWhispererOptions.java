@@ -16,6 +16,9 @@
 
 package de.switchconsulting.androidwhisperer;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.Locale;
 
 /**
@@ -35,7 +38,7 @@ public final class AndroidWhispererOptions {
      * @param tokenPauseThresholdMs minimum duration in milliseconds to detect a token pause
      */
     public AndroidWhispererOptions(
-            PauseMode pauseMode,
+            @NonNull PauseMode pauseMode,
             long segmentPauseThresholdMs,
             long tokenPauseThresholdMs) {
         this(pauseMode, segmentPauseThresholdMs, tokenPauseThresholdMs, null);
@@ -50,12 +53,11 @@ public final class AndroidWhispererOptions {
      * @param locale preselected language locale, or {@code null} for default/auto-detection
      */
     public AndroidWhispererOptions(
-            PauseMode pauseMode,
+            @NonNull PauseMode pauseMode,
             long segmentPauseThresholdMs,
             long tokenPauseThresholdMs,
-            Locale locale) {
-        if (pauseMode == null
-                || segmentPauseThresholdMs < 0
+            @Nullable Locale locale) {
+        if (segmentPauseThresholdMs < 0
                 || tokenPauseThresholdMs < 0) {
             throw new IllegalArgumentException("Invalid options");
         }
@@ -70,6 +72,7 @@ public final class AndroidWhispererOptions {
      *
      * @return default options instance
      */
+    @NonNull
     public static AndroidWhispererOptions defaults() {
         return new AndroidWhispererOptions(PauseMode.BOTH, 300, 100, null);
     }
@@ -79,6 +82,7 @@ public final class AndroidWhispererOptions {
      *
      * @return the pause mode
      */
+    @NonNull
     public PauseMode getPauseMode() {
         return pauseMode;
     }
@@ -106,6 +110,7 @@ public final class AndroidWhispererOptions {
      *
      * @return the preselected locale
      */
+    @Nullable
     public Locale getLocale() {
         return locale;
     }

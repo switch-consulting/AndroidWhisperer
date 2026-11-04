@@ -18,6 +18,9 @@ package de.switchconsulting.androidwhisperer;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.io.File;
 import java.net.URI;
 import java.net.URL;
@@ -93,7 +96,7 @@ public class WhisperModel {
      * @param variant model variant name (e.g. "tiny", "custom-model")
      * @param fileName file name on device (e.g. "ggml-custom.bin")
      */
-    public WhisperModel(String variant, String fileName) {
+    public WhisperModel(@NonNull String variant, @NonNull String fileName) {
         this(variant, fileName, null, -1L, null);
     }
 
@@ -105,7 +108,7 @@ public class WhisperModel {
      * @param supportedLocales list of supported locales, or null to auto-detect from variant
      */
     @SuppressWarnings("unused")
-    public WhisperModel(String variant, String fileName, List<Locale> supportedLocales) {
+    public WhisperModel(@NonNull String variant, @NonNull String fileName, @Nullable List<Locale> supportedLocales) {
         this(variant, fileName, null, -1L, supportedLocales);
     }
 
@@ -116,7 +119,7 @@ public class WhisperModel {
      * @param fileName file name on device
      * @param downloadUrl direct download URL
      */
-    public WhisperModel(String variant, String fileName, URL downloadUrl) {
+    public WhisperModel(@NonNull String variant, @NonNull String fileName, @Nullable URL downloadUrl) {
         this(variant, fileName, downloadUrl, -1L, null);
     }
 
@@ -129,7 +132,7 @@ public class WhisperModel {
      * @param supportedLocales list of supported locales, or null to auto-detect from variant
      */
     @SuppressWarnings("unused")
-    public WhisperModel(String variant, String fileName, URL downloadUrl, List<Locale> supportedLocales) {
+    public WhisperModel(@NonNull String variant, @NonNull String fileName, @Nullable URL downloadUrl, @Nullable List<Locale> supportedLocales) {
         this(variant, fileName, downloadUrl, -1L, supportedLocales);
     }
 
@@ -141,7 +144,7 @@ public class WhisperModel {
      * @param downloadUrl direct download URL
      * @param downloadSize expected download size in bytes, or -1 if unknown
      */
-    public WhisperModel(String variant, String fileName, URL downloadUrl, long downloadSize) {
+    public WhisperModel(@NonNull String variant, @NonNull String fileName, @Nullable URL downloadUrl, long downloadSize) {
         this(variant, fileName, downloadUrl, downloadSize, null);
     }
 
@@ -154,11 +157,16 @@ public class WhisperModel {
      * @param downloadSize expected download size in bytes, or -1 if unknown
      * @param supportedLocales list of supported locales, or null to auto-detect from variant
      */
-    public WhisperModel(String variant, String fileName, URL downloadUrl, long downloadSize, List<Locale> supportedLocales) {
-        if (variant == null || variant.trim().isEmpty()) {
+    public WhisperModel(
+            @NonNull String variant,
+            @NonNull String fileName,
+            @Nullable URL downloadUrl,
+            long downloadSize,
+            @Nullable List<Locale> supportedLocales) {
+        if (variant.trim().isEmpty()) {
             throw new IllegalArgumentException("variant is empty");
         }
-        if (fileName == null || fileName.trim().isEmpty()) {
+        if (fileName.trim().isEmpty()) {
             throw new IllegalArgumentException("fileName is empty");
         }
         this.variant = variant.trim();
@@ -181,14 +189,17 @@ public class WhisperModel {
         }
     }
 
+    @NonNull
     public String getVariant() {
         return variant;
     }
 
+    @NonNull
     public String getFileName() {
         return fileName;
     }
 
+    @Nullable
     public String getDownloadUrl() {
         return downloadUrl;
     }
@@ -207,6 +218,7 @@ public class WhisperModel {
      *
      * @return unmodifiable list of supported locales
      */
+    @NonNull
     public List<Locale> getSupportedLocales() {
         return supportedLocales;
     }
@@ -216,6 +228,7 @@ public class WhisperModel {
      *
      * @return unmodifiable list of supported locales
      */
+    @NonNull
     public List<Locale> getLocales() {
         return getSupportedLocales();
     }
@@ -226,7 +239,7 @@ public class WhisperModel {
      * @param locale the locale to check
      * @return true if supported, false otherwise
      */
-    public boolean isLocaleSupported(Locale locale) {
+    public boolean isLocaleSupported(@Nullable Locale locale) {
         if (locale == null) {
             return false;
         }
@@ -248,7 +261,7 @@ public class WhisperModel {
      * @param languageCode ISO language code or language tag
      * @return true if supported, false otherwise
      */
-    public boolean isLanguageSupported(String languageCode) {
+    public boolean isLanguageSupported(@Nullable String languageCode) {
         if (languageCode == null || languageCode.trim().isEmpty()) {
             return false;
         }
@@ -258,17 +271,16 @@ public class WhisperModel {
     /**
      * Returns the local {@link File} on the device where the model file is or will be stored.
      */
-    public File getFile(Context context) {
-        if (context == null) {
-            throw new IllegalArgumentException("context == null");
-        }
+    @NonNull
+    public File getFile(@NonNull Context context) {
         return new File(ModelManager.getModelsDir(context), fileName);
     }
 
     /**
      * Alias for {@link #getFile(Context)}, returns the local file on the device.
      */
-    public File getLocalFile(Context context) {
+    @NonNull
+    public File getLocalFile(@NonNull Context context) {
         return getFile(context);
     }
 }

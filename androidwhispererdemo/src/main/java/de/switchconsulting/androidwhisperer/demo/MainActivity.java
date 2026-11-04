@@ -262,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onSuccess(File modelFile) {
+            public void onSuccess(@NonNull File modelFile) {
                 runOnUiThread(() -> {
                     spinnerModel.setEnabled(true);
                     Toast.makeText(MainActivity.this, getString(R.string.download_model_ready, selectedModel.getVariant()), Toast.LENGTH_SHORT).show();
@@ -271,13 +271,13 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(Exception error) {
+            public void onError(@NonNull Exception error) {
                 runOnUiThread(() -> {
                     spinnerModel.setEnabled(true);
                     btnDownloadModel.setEnabled(true);
                     pbDownload.setVisibility(View.GONE);
-                    String errorMsg = error != null ? error.getMessage() : "";
-                    tvDownloadProgress.setText(getString(R.string.download_failed, errorMsg));
+                    String errorMsg = error.getMessage();
+                    tvDownloadProgress.setText(getString(R.string.download_failed, errorMsg != null ? errorMsg : ""));
                     tvStatus.setText(R.string.status_download_error);
                     Toast.makeText(MainActivity.this, getString(R.string.download_model_failed, errorMsg), Toast.LENGTH_LONG).show();
                     checkAndShowModelStatus();
