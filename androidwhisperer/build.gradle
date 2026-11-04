@@ -56,18 +56,6 @@ tasks.matching { it.name.contains("lint") }.configureEach {
 }
 
 mavenPublishing {
-    coordinates(
-        providers.gradleProperty("GROUP").orElse("de.switch-consulting").get(),
-        providers.gradleProperty("POM_ARTIFACT_ID").orElse("androidwhisperer").get(),
-        providers.gradleProperty("VERSION_NAME").orElse("0.1.0-SNAPSHOT").get()
-    )
-
-    configure(new com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", false, false))
-
-    tasks.matching { it.name == "javaDocReleaseGeneration" }.configureEach {
-        enabled = false
-    }
-
     tasks.register('androidJavadocs', Javadoc) {
         source = android.sourceSets.main.java.srcDirs
         android.libraryVariants.all { variant ->
@@ -90,17 +78,13 @@ mavenPublishing {
         dependsOn androidJavadocs
     }
 
-    def version = providers.gradleProperty("VERSION_NAME").orElse("0.1.0-SNAPSHOT").get()
-    if (!version.endsWith("-SNAPSHOT")) {
-        publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, true)
-    }
-
+    publishToMavenCentral()
     signAllPublications()
 
     pom {
         name = "AndroidWhisperer"
         description = "Android wrapper and JNI bindings for whisper.cpp speech recognition"
-        inceptionYear = "2025"
+        inceptionYear = "2026"
         url = "https://github.com/switchconsulting/AndroidWhisperer"
 
         licenses {
@@ -115,7 +99,7 @@ mavenPublishing {
             developer {
                 id = "switchconsulting"
                 name = "Switch Consulting"
-                url = "https://github.com/switchconsulting"
+                url = "https://www.switch-consulting.de"
             }
         }
 
@@ -127,18 +111,6 @@ mavenPublishing {
     }
 }
 
-publishing {
-    repositories {
-        maven {
-            name = "centralPortalSnapshots"
-            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-            credentials {
-                username = providers.gradleProperty("mavenCentralUsername").orNull
-                password = providers.gradleProperty("mavenCentralPassword").orNull
-            }
-        }
-    }
-}
 
 dependencies {
     implementation 'net.java.dev.jna:jna:5.19.1@aar'
