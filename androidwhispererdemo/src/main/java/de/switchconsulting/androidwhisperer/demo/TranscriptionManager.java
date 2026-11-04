@@ -21,6 +21,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 
 import de.switchconsulting.androidwhisperer.AndroidWhisperer;
 import de.switchconsulting.androidwhisperer.AndroidWhispererOptions;
@@ -47,68 +48,65 @@ public class TranscriptionManager {
     }
 
     public static void transcribeAudio(final Context context, final WhisperModel model, final Locale locale, final File pcmFile, final TranscriptionCallback callback) {
-        new Thread(() -> {
-            WhisperModel selectedModel = (model != null) ? model : WhisperModel.TINY;
-            if (!ModelManager.isModelAvailable(context, selectedModel)) {
-                if (callback != null) {
-                    callback.onError(new WhisperModelNotAvailable("Whisper model '" + selectedModel.getVariant() + "' is not available."));
-                }
-                return;
+        WhisperModel selectedModel = (model != null) ? model : WhisperModel.TINY;
+        if (!ModelManager.isModelAvailable(context, selectedModel)) {
+            if (callback != null) {
+                callback.onError(new WhisperModelNotAvailable("Whisper model '" + selectedModel.getVariant() + "' is not available."));
             }
+            return;
+        }
 
+        CompletableFuture.supplyAsync(() -> {
             try (AndroidWhisperer whisperer = new AndroidWhisperer()) {
-                whisperer.addListener(new TranscriptionListener() {
-                    @Override
-                    public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
-                        if (callback != null) {
+                if (callback != null) {
+                    whisperer.addListener(new TranscriptionListener() {
+                        @Override
+                        public void onNewSegment(SegmentResult segment, String accumulatedTranscript) {
                             callback.onNewSegment(segment, accumulatedTranscript);
                         }
-                    }
 
-                    @Override
-                    public void onProgress(int progressPercent) {
-                        if (callback != null) {
+                        @Override
+                        public void onProgress(int progressPercent) {
                             callback.onProgress(progressPercent);
                         }
-                    }
 
-                    @Override
-                    public void onError(TranscriptionException exception) {
-                        if (callback != null) {
+                        @Override
+                        public void onError(TranscriptionException exception) {
                             callback.onError(exception);
                         }
-                    }
 
-                    @Override
-                    public void onLanguageDetected(Locale detectedLocale) {
-                        if (callback != null) {
+                        @Override
+                        public void onLanguageDetected(Locale detectedLocale) {
                             callback.onLanguageDetected(detectedLocale);
                         }
-                    }
 
-                    @Override
-                    public void onTranscriptionCompleted(TranscriptionResult result) {
-                        if (callback != null) {
+                        @Override
+                        public void onTranscriptionCompleted(TranscriptionResult result) {
                             callback.onTranscriptionCompleted(result);
                         }
-                    }
-                });
+                    });
+                }
                 whisperer.init(context, selectedModel);
 
                 float[] samples = AudioRecorder.convertPcmToFloat(pcmFile);
                 AndroidWhispererOptions options = new AndroidWhispererOptions(
                         PauseMode.BOTH, 300, 100, locale);
-                TranscriptionResult result = whisperer.transcribe(samples, options);
-
+                return whisperer.transcribe(samples, options);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).whenComplete((result, throwable) -> {
+            if (throwable != null) {
+                Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                Log.e(TAG, "Transcription failed", cause);
+                if (callback != null) {
+                    callback.onError(cause instanceof Exception ? (Exception) cause : new Exception(cause));
+                }
+            } else {
                 if (callback != null) {
                     callback.onSuccess(result);
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Transcription failed", e);
-                if (callback != null) {
-                    callback.onError(e);
-                }
             }
-        }, "Transcription Worker Thread").start();
+        });
     }
 }

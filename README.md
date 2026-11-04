@@ -164,10 +164,18 @@ import java.io.File;
 // Load a 16-bit WAV file or convert raw PCM16 bytes
 float[] samples = AudioUtils.readWav(new File("/path/to/audio.wav"));
 
-// Transcribe
+// Synchronous Transcribe
 TranscriptionResult result = whisperer.transcribe(samples);
 System.out.println("Language: " + result.getLanguage());
 System.out.println("Text: " + result.getText());
+
+// Asynchronous Transcribe (CompletableFuture)
+whisperer.transcribeAsync(samples).thenAccept(asyncResult -> {
+    System.out.println("Async Text: " + asyncResult.getText());
+}).exceptionally(ex -> {
+    ex.printStackTrace();
+    return null;
+});
 
 // Access segment-level details & detected pauses
 for (SegmentResult segment : result.getSegments()) {

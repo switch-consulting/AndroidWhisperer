@@ -584,6 +584,45 @@ public class AndroidWhispererTest {
     }
 
     @Test
+    public void transcribeAsync_success() throws Exception {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    switch (name) {
+                        case "whisper_init_from_file":
+                            return new Pointer(999L);
+                        case "whisper_bridge_transcribe":
+                            return 0;
+                        case "whisper_full_n_segments":
+                            return 1;
+                        case "whisper_full_get_segment_t0":
+                            return 0L;
+                        case "whisper_full_get_segment_t1":
+                            return 100L;
+                        case "whisper_full_get_segment_text":
+                            return "Async hello";
+                        case "whisper_bridge_detect_language":
+                            return 0;
+                        case "whisper_lang_str":
+                            return "en";
+                        case "whisper_free":
+                            return null;
+                        default:
+                            return null;
+                    }
+                });
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            TranscriptionResult result = w.transcribeAsync(new float[]{0.1f}).get();
+            assertNotNull(result);
+            assertEquals("Async hello", result.getText());
+        }
+    }
+
+    @Test
     public void lifecycle_closedEngine_throws() {
         WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
                 WhisperBridge.class.getClassLoader(),

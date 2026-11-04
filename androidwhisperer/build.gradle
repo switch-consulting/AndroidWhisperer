@@ -129,3 +129,11 @@ tasks.withType(Javadoc).configureEach {
     exclude 'de/switchconsulting/androidwhisperer/internal/**'
 }
 
+tasks.withType(Test).configureEach {
+    jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED',
+            '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens=java.base/java.util=ALL-UNNAMED',
+            '--add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED'
+    systemProperty 'jna.nosys', 'true'
+}
+

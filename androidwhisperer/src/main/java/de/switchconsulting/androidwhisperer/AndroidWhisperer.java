@@ -17,6 +17,9 @@
 package de.switchconsulting.androidwhisperer;
 
 import android.content.Context;
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
 
 import com.sun.jna.Pointer;
 
@@ -35,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -231,6 +235,30 @@ public final class AndroidWhisperer implements Closeable {
     /** Transcribes audio with the default pause-analysis options. */
     public synchronized TranscriptionResult transcribe(float[] samples) {
         return transcribe(samples, AndroidWhispererOptions.defaults());
+    }
+
+    /**
+     * Asynchronously transcribes audio with the default pause-analysis options.
+     *
+     * @param samples mono float PCM audio samples at 16 kHz
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @RequiresApi(Build.VERSION_CODES.N)
+    public CompletableFuture<TranscriptionResult> transcribeAsync(float[] samples) {
+        return CompletableFuture.supplyAsync(() -> transcribe(samples));
+    }
+
+    /**
+     * Asynchronously runs transcription and extracts segment- and/or token-level pauses.
+     *
+     * @param samples mono float PCM audio samples at 16 kHz
+     * @param options transcription options
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @RequiresApi(Build.VERSION_CODES.N)
+    public CompletableFuture<TranscriptionResult> transcribeAsync(
+            float[] samples, AndroidWhispererOptions options) {
+        return CompletableFuture.supplyAsync(() -> transcribe(samples, options));
     }
 
     private boolean isLocaleSupportedByModel(Locale locale) {
