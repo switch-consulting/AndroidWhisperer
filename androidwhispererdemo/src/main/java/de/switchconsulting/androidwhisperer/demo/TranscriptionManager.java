@@ -85,6 +85,13 @@ public class TranscriptionManager {
                             callback.onLanguageDetected(detectedLocale);
                         }
                     }
+
+                    @Override
+                    public void onTranscriptionCompleted(TranscriptionResult result) {
+                        if (callback != null) {
+                            callback.onTranscriptionCompleted(result);
+                        }
+                    }
                 });
                 whisperer.init(context, selectedModel);
 

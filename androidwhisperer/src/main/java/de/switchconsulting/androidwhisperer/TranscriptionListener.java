@@ -17,6 +17,7 @@
 package de.switchconsulting.androidwhisperer;
 
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
+import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
 import java.util.Locale;
 
@@ -54,5 +55,13 @@ public interface TranscriptionListener {
      * @param locale the detected language locale
      */
     default void onLanguageDetected(Locale locale) {
+    }
+
+    /**
+     * Called when transcription is successfully completed with the final result.
+     *
+     * @param result the complete transcription result
+     */
+    default void onTranscriptionCompleted(TranscriptionResult result) {
     }
 }

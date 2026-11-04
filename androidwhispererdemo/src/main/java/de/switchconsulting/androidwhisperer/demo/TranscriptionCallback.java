@@ -27,4 +27,7 @@ public interface TranscriptionCallback {
     void onSuccess(TranscriptionResult result);
     void onError(Exception e);
     default void onLanguageDetected(Locale locale) {}
+    default void onTranscriptionCompleted(TranscriptionResult result) {
+        onSuccess(result);
+    }
 }

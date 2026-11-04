@@ -96,6 +96,16 @@ public final class AndroidWhisperer implements Closeable {
         }
     }
 
+    private void notifyListenersTranscriptionCompleted(TranscriptionResult result) {
+        for (TranscriptionListener l : listeners) {
+            try {
+                l.onTranscriptionCompleted(result);
+            } catch (Exception ignored) {
+                // Prevent listener errors from masking transcription execution
+            }
+        }
+    }
+
     /**
      * Initializes the engine with the default model ({@link WhisperModel#TINY}).
      *
@@ -393,8 +403,10 @@ public final class AndroidWhisperer implements Closeable {
 
             String language = languageParam != null ? languageParam : "";
 
-            return new TranscriptionResult(
+            TranscriptionResult result = new TranscriptionResult(
                     transcript.toString().trim(), language, segments, allPauses);
+            notifyListenersTranscriptionCompleted(result);
+            return result;
         } catch (TranscriptionException e) {
             notifyListenersError(e);
             throw e;
