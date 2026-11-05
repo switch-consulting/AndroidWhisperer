@@ -688,4 +688,31 @@ public class AndroidWhispererTest {
             assertEquals("Engine is closed", e.getMessage());
         }
     }
+
+    @Test
+    public void close_invokesWhisperFree() {
+        AtomicInteger freeCount = new AtomicInteger(0);
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    if (name.equals("whisper_init_from_file")) {
+                        return new Pointer(1234L);
+                    } else if (name.equals("whisper_free")) {
+                        freeCount.incrementAndGet();
+                        return null;
+                    }
+                    return null;
+                });
+
+        AndroidWhisperer w = new AndroidWhisperer(bridge);
+        w.initModelFromFile(new File("dummy.bin"));
+        w.close();
+        assertEquals(1, freeCount.get());
+
+        // Calling close again should not double free
+        w.close();
+        assertEquals(1, freeCount.get());
+    }
 }

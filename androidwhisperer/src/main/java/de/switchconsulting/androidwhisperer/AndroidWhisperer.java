@@ -54,6 +54,8 @@ public final class AndroidWhisperer implements Closeable {
     private Pointer context;
     private WhisperModel currentModel;
     private boolean closed;
+    private Object cleanable;
+    private WhisperCleanerState cleanupState;
 
     public AndroidWhisperer() {
         this(WhisperBridge.INSTANCE);
@@ -193,10 +195,18 @@ public final class AndroidWhisperer implements Closeable {
         }
 
         Pointer previous = context;
+
+        if (cleanable != null) {
+            WhisperCleaner.clean(cleanable);
+            cleanable = null;
+        }
+
+        cleanupState = new WhisperCleanerState(nativeApi, replacement);
         context = replacement;
+        cleanable = WhisperCleaner.register(this, cleanupState);
 
         // Free only after replacement initialization succeeds.
-        if (previous != null) {
+        if (previous != null && previous != replacement && Pointer.nativeValue(previous) != 0) {
             nativeApi.whisper_free(previous);
         }
     }
@@ -575,10 +585,25 @@ public final class AndroidWhisperer implements Closeable {
         if (closed) return;
         closed = true;
 
-        if (context != null) {
-            nativeApi.whisper_free(context);
-            context = null;
+        if (cleanable != null) {
+            WhisperCleaner.clean(cleanable);
+            cleanable = null;
         }
+
+        if (context != null) {
+            Pointer ptr = context;
+            context = null;
+            if (cleanupState != null) {
+                cleanupState.context = null;
+            }
+            if (Pointer.nativeValue(ptr) != 0) {
+                try {
+                    nativeApi.whisper_free(ptr);
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+        cleanupState = null;
     }
 
     /** Alias for close(), for callers that prefer explicit lifecycle naming. */
