@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 
 /**
  * Public Java facade for local whisper.cpp transcription.
@@ -244,7 +245,20 @@ public final class AndroidWhisperer implements Closeable {
      */
     @NonNull
     public CompletableFuture<TranscriptionResult> transcribeAsync(@NonNull float[] samples) {
-        return CompletableFuture.supplyAsync(() -> transcribe(samples));
+        return transcribeAsync(samples, null, null);
+    }
+
+    /**
+     * Asynchronously transcribes audio with the default pause-analysis options.
+     *
+     * @param samples mono float PCM audio samples at 16 kHz
+     * @param executor optional custom executor to run the asynchronous task
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @NonNull
+    public CompletableFuture<TranscriptionResult> transcribeAsync(
+            @NonNull float[] samples, @Nullable Executor executor) {
+        return transcribeAsync(samples, AndroidWhispererOptions.defaults(), executor);
     }
 
     /**
@@ -257,7 +271,22 @@ public final class AndroidWhisperer implements Closeable {
     @NonNull
     public CompletableFuture<TranscriptionResult> transcribeAsync(
             @NonNull float[] samples, @Nullable AndroidWhispererOptions options) {
-        return CompletableFuture.supplyAsync(() -> transcribe(samples, options));
+        return transcribeAsync(samples, options, null);
+    }
+
+    /**
+     * Asynchronously runs transcription and extracts segment- and/or token-level pauses.
+     *
+     * @param samples mono float PCM audio samples at 16 kHz
+     * @param options transcription options
+     * @param executor optional custom executor to run the asynchronous task
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @NonNull
+    public CompletableFuture<TranscriptionResult> transcribeAsync(
+            @NonNull float[] samples, @Nullable AndroidWhispererOptions options, @Nullable Executor executor) {
+        Executor exec = executor != null ? executor : WhisperExecutors.getDefaultExecutor();
+        return CompletableFuture.supplyAsync(() -> transcribe(samples, options), exec);
     }
 
     private boolean isLocaleSupportedByModel(Locale locale) {

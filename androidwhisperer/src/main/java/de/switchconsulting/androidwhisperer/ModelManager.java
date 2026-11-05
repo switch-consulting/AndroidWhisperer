@@ -32,8 +32,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 /**
  * Utility class for managing local Whisper model files, downloading remote models,
@@ -112,8 +111,6 @@ public final class ModelManager {
                 "Model not available locally or via download URL: " + model.getVariant());
     }
 
-    private static final ExecutorService DOWNLOAD_EXECUTOR =
-            Executors.newCachedThreadPool();
 
     /**
      * Asynchronously ensures the specified Whisper model is available locally,
@@ -125,6 +122,20 @@ public final class ModelManager {
      */
     public static void ensureModelAsync(
             @Nullable Context context, @Nullable WhisperModel model, @Nullable ModelDownloadListener listener) {
+        ensureModelAsync(context, model, null, listener);
+    }
+
+    /**
+     * Asynchronously ensures the specified Whisper model is available locally,
+     * or downloaded to internal storage.
+     *
+     * @param context the Android context
+     * @param model the Whisper model
+     * @param executor optional custom executor to run the background task
+     * @param listener callback listener for progress, success, or error
+     */
+    public static void ensureModelAsync(
+            @Nullable Context context, @Nullable WhisperModel model, @Nullable Executor executor, @Nullable ModelDownloadListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("listener == null");
         }
@@ -136,7 +147,8 @@ public final class ModelManager {
             listener.onError(new IllegalArgumentException("model == null"));
             return;
         }
-        DOWNLOAD_EXECUTOR.execute(() -> {
+        Executor exec = executor != null ? executor : WhisperExecutors.getDefaultExecutor();
+        exec.execute(() -> {
             try {
                 File targetFile = model.getFile(context);
                 if (targetFile.exists() && targetFile.length() > 0) {
@@ -168,6 +180,19 @@ public final class ModelManager {
      */
     public static void downloadModelAsync(
             @Nullable Context context, @Nullable WhisperModel model, @Nullable ModelDownloadListener listener) {
+        downloadModelAsync(context, model, null, listener);
+    }
+
+    /**
+     * Asynchronously downloads the specified Whisper model file to internal storage.
+     *
+     * @param context the Android context
+     * @param model the Whisper model
+     * @param executor optional custom executor to run the background task
+     * @param listener callback listener for progress, success, or error
+     */
+    public static void downloadModelAsync(
+            @Nullable Context context, @Nullable WhisperModel model, @Nullable Executor executor, @Nullable ModelDownloadListener listener) {
         if (listener == null) {
             throw new IllegalArgumentException("listener == null");
         }
@@ -179,7 +204,8 @@ public final class ModelManager {
             listener.onError(new IllegalArgumentException("model == null"));
             return;
         }
-        DOWNLOAD_EXECUTOR.execute(() -> {
+        Executor exec = executor != null ? executor : WhisperExecutors.getDefaultExecutor();
+        exec.execute(() -> {
             try {
                 String downloadUrl = model.getDownloadUrl();
                 if (downloadUrl == null || downloadUrl.trim().isEmpty()) {

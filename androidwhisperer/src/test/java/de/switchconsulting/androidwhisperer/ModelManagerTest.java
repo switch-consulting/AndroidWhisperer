@@ -478,4 +478,44 @@ public class ModelManagerTest {
         assertTrue(ModelManager.deleteModel(mockContext, model));
         assertFalse(localModel.exists());
     }
+
+    @Test
+    public void ensureModelAsync_withCustomExecutor() throws Exception {
+        android.content.Context mockContext = new android.content.ContextWrapper(null) {
+            @Override
+            public File getFilesDir() {
+                return temporaryFolder.getRoot();
+            }
+        };
+
+        File modelsDir = ModelManager.getModelsDir(mockContext);
+        File localModel = new File(modelsDir, "ggml-custom-exec.bin");
+        try (FileOutputStream out = new FileOutputStream(localModel)) {
+            out.write("fake model data".getBytes());
+        }
+
+        WhisperModel model = new WhisperModel("custom-exec", "ggml-custom-exec.bin", URI.create("https://example.com/unused").toURL());
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicBoolean executedOnCustom = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        java.util.concurrent.Executor customExecutor = command -> {
+            executedOnCustom.set(true);
+            command.run();
+        };
+
+        ModelManager.ensureModelAsync(mockContext, model, customExecutor, new ModelDownloadListener() {
+            @Override
+            public void onSuccess(@NonNull File modelFile) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(@NonNull Exception error) {
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        assertTrue(executedOnCustom.get());
+    }
 }

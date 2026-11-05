@@ -625,6 +625,52 @@ public class AndroidWhispererTest {
     }
 
     @Test
+    public void transcribeAsync_withCustomExecutor() throws Exception {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    switch (name) {
+                        case "whisper_init_from_file":
+                            return new Pointer(999L);
+                        case "whisper_bridge_transcribe":
+                            return 0;
+                        case "whisper_full_n_segments":
+                            return 1;
+                        case "whisper_full_get_segment_t0":
+                            return 0L;
+                        case "whisper_full_get_segment_t1":
+                            return 100L;
+                        case "whisper_full_get_segment_text":
+                            return "Custom Executor hello";
+                        case "whisper_bridge_detect_language":
+                            return 0;
+                        case "whisper_lang_str":
+                            return "en";
+                        case "whisper_free":
+                            return null;
+                        default:
+                            return null;
+                    }
+                });
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            java.util.concurrent.atomic.AtomicBoolean executedOnCustom = new java.util.concurrent.atomic.AtomicBoolean(false);
+            java.util.concurrent.Executor customExecutor = command -> {
+                executedOnCustom.set(true);
+                command.run();
+            };
+
+            TranscriptionResult result = w.transcribeAsync(new float[]{0.1f}, customExecutor).get();
+            assertNotNull(result);
+            assertEquals("Custom Executor hello", result.getText());
+            assertTrue(executedOnCustom.get());
+        }
+    }
+
+    @Test
     public void lifecycle_closedEngine_throws() {
         WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
                 WhisperBridge.class.getClassLoader(),
