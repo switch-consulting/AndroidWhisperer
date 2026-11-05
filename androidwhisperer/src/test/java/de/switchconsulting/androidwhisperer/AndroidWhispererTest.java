@@ -715,4 +715,30 @@ public class AndroidWhispererTest {
         w.close();
         assertEquals(1, freeCount.get());
     }
+
+    @Test
+    public void initModel_replacesAndFreesPreviousContextOnce() {
+        AtomicInteger freeCount = new AtomicInteger(0);
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    if (name.equals("whisper_init_from_file")) {
+                        return new Pointer(1234L);
+                    } else if (name.equals("whisper_free")) {
+                        freeCount.incrementAndGet();
+                        return null;
+                    }
+                    return null;
+                });
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("model1.bin"));
+            assertEquals(0, freeCount.get());
+            w.initModelFromFile(new File("model2.bin"));
+            assertEquals(1, freeCount.get());
+        }
+        assertEquals(2, freeCount.get());
+    }
 }

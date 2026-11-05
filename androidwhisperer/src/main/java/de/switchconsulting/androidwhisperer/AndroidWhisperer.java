@@ -194,8 +194,7 @@ public final class AndroidWhisperer implements Closeable {
                     "Whisper failed to load model: " + modelPath);
         }
 
-        Pointer previous = context;
-
+        // Clean and free previous model context if any
         if (cleanable != null) {
             WhisperCleaner.clean(cleanable);
             cleanable = null;
@@ -204,11 +203,6 @@ public final class AndroidWhisperer implements Closeable {
         cleanupState = new WhisperCleanerState(nativeApi, replacement);
         context = replacement;
         cleanable = WhisperCleaner.register(this, cleanupState);
-
-        // Free only after replacement initialization succeeds.
-        if (previous != null && previous != replacement && Pointer.nativeValue(previous) != 0) {
-            nativeApi.whisper_free(previous);
-        }
     }
 
     /**
@@ -590,20 +584,8 @@ public final class AndroidWhisperer implements Closeable {
             cleanable = null;
         }
 
-        if (context != null) {
-            Pointer ptr = context;
-            context = null;
-            if (cleanupState != null) {
-                cleanupState.context = null;
-            }
-            if (Pointer.nativeValue(ptr) != 0) {
-                try {
-                    nativeApi.whisper_free(ptr);
-                } catch (Throwable ignored) {
-                }
-            }
-        }
         cleanupState = null;
+        context = null;
     }
 
     /** Alias for close(), for callers that prefer explicit lifecycle naming. */
