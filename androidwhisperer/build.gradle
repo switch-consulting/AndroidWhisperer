@@ -97,8 +97,8 @@ mavenPublishing {
 
         developers {
             developer {
-                id = "switchconsulting"
-                name = "Switch Consulting"
+                id = "schnelle"
+                name = "Dirk Schnelle-Walka"
                 url = "https://www.switch-consulting.de"
             }
         }
