@@ -23,18 +23,15 @@
 
 ### Gradle Dependency
 
-#### 1. From Maven Central (Releases & Snapshots)
+#### 1. From Maven Central
 
-In your `settings.gradle` (or root `build.gradle`), ensure Maven Central and the Sonatype Snapshot repository are declared:
+In your `settings.gradle` (or root `build.gradle`), ensure Maven Central is declared:
 
 ```groovy
 dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-        }
     }
 }
 ```
@@ -43,11 +40,7 @@ Then add the dependency to your app module's `build.gradle`:
 
 ```groovy
 dependencies {
-    // Release version:
     implementation 'de.switch-consulting:androidwhisperer:0.1.0'
-
-    // Or latest Snapshot:
-    // implementation 'de.switch-consulting:androidwhisperer:0.1.0-SNAPSHOT'
 }
 ```
 
@@ -71,7 +64,7 @@ dependencies {
 
 ## Usage
 
-### 0. Add Dependency (Releases & Snapshots)
+### 0. Add Dependency
 
 In your `settings.gradle`:
 
@@ -80,10 +73,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // Required for SNAPSHOT builds:
-        maven {
-            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-        }
     }
 }
 ```
@@ -92,11 +81,7 @@ In your app's `build.gradle`:
 
 ```groovy
 dependencies {
-    // Current snapshot:
-    implementation 'de.switch-consulting:androidwhisperer:0.1.0-SNAPSHOT'
-
-    // Or release (when published):
-    // implementation 'de.switch-consulting:androidwhisperer:0.1.0'
+    implementation 'de.switch-consulting:androidwhisperer:0.1.0'
 }
 ```
 
