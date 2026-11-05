@@ -62,20 +62,7 @@ dependencies {
 
 ---
 
-## Usage
-
-### 0. Add Dependency
-
-In your `settings.gradle`:
-
-```groovy
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-```
+### 3. Add App Dependency
 
 In your app's `build.gradle`:
 
