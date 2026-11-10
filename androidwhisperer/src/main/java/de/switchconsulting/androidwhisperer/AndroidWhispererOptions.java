@@ -25,6 +25,12 @@ import java.util.Locale;
  * Configuration options for transcription behavior and pause analysis.
  */
 public final class AndroidWhispererOptions {
+    /** Default segment pause threshold in milliseconds (300 ms). */
+    public static final long DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS = 300L;
+
+    /** Default token pause threshold in milliseconds (100 ms). */
+    public static final long DEFAULT_TOKEN_PAUSE_THRESHOLD_MS = 100L;
+
     private final PauseMode pauseMode;
     private final long segmentPauseThresholdMs;
     private final long tokenPauseThresholdMs;
@@ -68,13 +74,13 @@ public final class AndroidWhispererOptions {
     }
 
     /**
-     * Returns the default transcription options ({@link PauseMode#BOTH}, 300ms segment threshold, 100ms token threshold, no language preselection).
+     * Returns the default transcription options ({@link PauseMode#DEFAULT}, {@link #DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS}, {@link #DEFAULT_TOKEN_PAUSE_THRESHOLD_MS}, no language preselection).
      *
      * @return default options instance
      */
     @NonNull
     public static AndroidWhispererOptions defaults() {
-        return new AndroidWhispererOptions(PauseMode.BOTH, 300, 100, null);
+        return new AndroidWhispererOptions(PauseMode.DEFAULT, DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS, DEFAULT_TOKEN_PAUSE_THRESHOLD_MS, null);
     }
 
     /**

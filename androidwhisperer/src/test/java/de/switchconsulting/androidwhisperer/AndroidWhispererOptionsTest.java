@@ -30,9 +30,9 @@ public class AndroidWhispererOptionsTest {
     public void defaults_returnsExpectedValues() {
         AndroidWhispererOptions opts = AndroidWhispererOptions.defaults();
         assertNotNull(opts);
-        assertEquals(PauseMode.BOTH, opts.getPauseMode());
-        assertEquals(300, opts.getSegmentPauseThresholdMs());
-        assertEquals(100, opts.getTokenPauseThresholdMs());
+        assertEquals(PauseMode.DEFAULT, opts.getPauseMode());
+        assertEquals(AndroidWhispererOptions.DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS, opts.getSegmentPauseThresholdMs());
+        assertEquals(AndroidWhispererOptions.DEFAULT_TOKEN_PAUSE_THRESHOLD_MS, opts.getTokenPauseThresholdMs());
         assertNull(opts.getLocale());
     }
 

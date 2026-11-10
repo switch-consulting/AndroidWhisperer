@@ -27,5 +27,8 @@ public enum PauseMode {
     /** Analyze pauses between individual tokens. */
     TOKEN,
     /** Analyze both segment-level and token-level pauses. */
-    BOTH
+    BOTH;
+
+    /** Default pause analysis mode. */
+    public static final PauseMode DEFAULT = BOTH;
 }
