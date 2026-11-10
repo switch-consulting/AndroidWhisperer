@@ -23,7 +23,7 @@
 
 ### Gradle Dependency
 
-#### 1. From Maven Central
+#### From Maven Central
 
 In your `settings.gradle` (or root `build.gradle`), ensure Maven Central is declared:
 
@@ -44,7 +44,7 @@ dependencies {
 }
 ```
 
-#### 2. Project / Submodule Dependency
+#### Project / Submodule Dependency
 
 Alternatively, if including the project source directly, include the `:androidwhisperer` module in `settings.gradle`:
 
@@ -62,30 +62,6 @@ dependencies {
 
 ---
 
-## Usage
-
-### 0. Add Dependency
-
-In your `settings.gradle`:
-
-```groovy
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-```
-
-In your app's `build.gradle`:
-
-```groovy
-dependencies {
-    implementation 'de.switch-consulting:androidwhisperer:0.1.0'
-}
-```
-
----
 
 ## Predefined Models
 
