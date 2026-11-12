@@ -24,7 +24,7 @@ import org.json.JSONObject;
 /**
  * A detected silent interval between two speech boundaries.
  */
-public final class PauseSegment {
+public final class PauseSegment implements TranscriptionItem {
 
     private final long startMs;
     private final long endMs;
@@ -54,6 +54,7 @@ public final class PauseSegment {
      *
      * @return start time in ms
      */
+    @Override
     public long getStartMs() { return startMs; }
 
     /**
@@ -61,6 +62,7 @@ public final class PauseSegment {
      *
      * @return end time in ms
      */
+    @Override
     public long getEndMs() { return endMs; }
 
     /**
@@ -68,6 +70,7 @@ public final class PauseSegment {
      *
      * @return duration in ms
      */
+    @Override
     public long getDurationMs() { return durationMs; }
 
     /**
@@ -81,12 +84,14 @@ public final class PauseSegment {
     /**
      * Returns a JSON object representation of this pause segment.
      *
-     * @return JSON object containing startMs, endMs, durationMs, and level
+     * @return JSON object containing type, startMs, endMs, durationMs, and level
      * @throws JSONException if an error occurs while creating the JSON object
      */
     @NonNull
+    @Override
     public JSONObject toJSON() throws JSONException {
         JSONObject json = new JSONObject();
+        json.put("type", "PAUSE");
         json.put("startMs", startMs);
         json.put("endMs", endMs);
         json.put("durationMs", durationMs);

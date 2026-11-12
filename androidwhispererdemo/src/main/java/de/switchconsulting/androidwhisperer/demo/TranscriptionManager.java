@@ -21,6 +21,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import org.json.JSONException;
+
 import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -64,6 +66,11 @@ public class TranscriptionManager {
                     whisperer.addListener(new TranscriptionListener() {
                         @Override
                         public void onNewSegment(@NonNull SegmentResult segment, @NonNull String accumulatedTranscript) {
+                            try {
+                                Log.d(TAG, "New segment JSON: " + segment.toJSON());
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Failed to serialize segment to JSON", e);
+                            }
                             callback.onNewSegment(segment, accumulatedTranscript);
                         }
 
@@ -84,6 +91,11 @@ public class TranscriptionManager {
 
                         @Override
                         public void onTranscriptionCompleted(@NonNull TranscriptionResult result) {
+                            try {
+                                Log.d(TAG, "Transcription result JSON: " + result.toJSON());
+                            } catch (JSONException e) {
+                                Log.e(TAG, "Failed to serialize transcription result to JSON", e);
+                            }
                             callback.onTranscriptionCompleted(result);
                         }
                     });
