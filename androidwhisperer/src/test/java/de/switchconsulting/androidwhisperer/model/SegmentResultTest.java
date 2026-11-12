@@ -49,4 +49,17 @@ public class SegmentResultTest {
             assertEquals("Invalid segment interval", e.getMessage());
         }
     }
+
+    @Test
+    public void segmentResult_toJSON() throws Exception {
+        PauseSegment pause = new PauseSegment(50, 100, PauseLevel.TOKEN);
+        SegmentResult segment = new SegmentResult("Hello", 0, 200, Collections.singletonList(pause));
+        org.json.JSONObject json = segment.toJSON();
+        assertEquals("Hello", json.getString("text"));
+        assertEquals(0, json.getLong("startMs"));
+        assertEquals(200, json.getLong("endMs"));
+        org.json.JSONArray pauses = json.getJSONArray("pauses");
+        assertEquals(1, pauses.length());
+        assertEquals(50, pauses.getJSONObject(0).getLong("startMs"));
+    }
 }

@@ -44,4 +44,16 @@ public class TranscriptionResultTest {
         assertNotNull(nullSafe.getSegments());
         assertNotNull(nullSafe.getAllPauses());
     }
+
+    @Test
+    public void transcriptionResult_toJSON() throws Exception {
+        SegmentResult seg = new SegmentResult("Hi", 0, 100, Collections.emptyList());
+        PauseSegment pause = new PauseSegment(100, 200, PauseLevel.SEGMENT);
+        TranscriptionResult tr = new TranscriptionResult("Hi", Locale.ENGLISH, Collections.singletonList(seg), Collections.singletonList(pause));
+        org.json.JSONObject json = tr.toJSON();
+        assertEquals("Hi", json.getString("text"));
+        assertEquals("en", json.getString("language"));
+        assertEquals(1, json.getJSONArray("segments").length());
+        assertEquals(1, json.getJSONArray("pauses").length());
+    }
 }

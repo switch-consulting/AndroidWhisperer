@@ -61,4 +61,14 @@ public class PauseSegmentTest {
             assertEquals("level == null", e.getMessage());
         }
     }
+
+    @Test
+    public void pauseSegment_toJSON() throws Exception {
+        PauseSegment pause = new PauseSegment(100, 300, PauseLevel.SEGMENT);
+        org.json.JSONObject json = pause.toJSON();
+        assertEquals(100, json.getLong("startMs"));
+        assertEquals(300, json.getLong("endMs"));
+        assertEquals(200, json.getLong("durationMs"));
+        assertEquals("SEGMENT", json.getString("level"));
+    }
 }

@@ -19,6 +19,10 @@ package de.switchconsulting.androidwhisperer.model;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,4 +92,28 @@ public final class TranscriptionResult {
      */
     @NonNull
     public List<PauseSegment> getAllPauses() { return pauses; }
+
+    /**
+     * Returns a JSON object representation of this transcription result.
+     *
+     * @return JSON object containing text, language, segments, and pauses
+     * @throws JSONException if an error occurs while creating the JSON object
+     */
+    @NonNull
+    public JSONObject toJSON() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("text", text);
+        json.put("language", language != null ? language.toLanguageTag() : JSONObject.NULL);
+        JSONArray segmentsArray = new JSONArray();
+        for (SegmentResult segment : segments) {
+            segmentsArray.put(segment.toJSON());
+        }
+        json.put("segments", segmentsArray);
+        JSONArray pausesArray = new JSONArray();
+        for (PauseSegment pause : pauses) {
+            pausesArray.put(pause.toJSON());
+        }
+        json.put("pauses", pausesArray);
+        return json;
+    }
 }

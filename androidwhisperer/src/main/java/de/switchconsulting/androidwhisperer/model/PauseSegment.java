@@ -18,6 +18,9 @@ package de.switchconsulting.androidwhisperer.model;
 
 import androidx.annotation.NonNull;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * A detected silent interval between two speech boundaries.
  */
@@ -74,4 +77,20 @@ public final class PauseSegment {
      */
     @NonNull
     public PauseLevel getLevel() { return level; }
+
+    /**
+     * Returns a JSON object representation of this pause segment.
+     *
+     * @return JSON object containing startMs, endMs, durationMs, and level
+     * @throws JSONException if an error occurs while creating the JSON object
+     */
+    @NonNull
+    public JSONObject toJSON() throws JSONException {
+        JSONObject json = new JSONObject();
+        json.put("startMs", startMs);
+        json.put("endMs", endMs);
+        json.put("durationMs", durationMs);
+        json.put("level", level.name());
+        return json;
+    }
 }
