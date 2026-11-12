@@ -19,9 +19,11 @@ package de.switchconsulting.androidwhisperer.model;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class TranscriptionResultTest {
 
@@ -29,16 +31,16 @@ public class TranscriptionResultTest {
     public void transcriptionResult_valid() {
         SegmentResult seg = new SegmentResult("Hi", 0, 100, Collections.emptyList());
         PauseSegment pause = new PauseSegment(100, 200, PauseLevel.SEGMENT);
-        TranscriptionResult tr = new TranscriptionResult("Hi", "en", Collections.singletonList(seg), Collections.singletonList(pause));
+        TranscriptionResult tr = new TranscriptionResult("Hi", Locale.ENGLISH, Collections.singletonList(seg), Collections.singletonList(pause));
 
         assertEquals("Hi", tr.getText());
-        assertEquals("en", tr.getLanguage());
+        assertEquals(Locale.ENGLISH, tr.getLanguage());
         assertEquals(1, tr.getSegments().size());
         assertEquals(1, tr.getAllPauses().size());
 
         TranscriptionResult nullSafe = new TranscriptionResult(null, null, null, null);
         assertEquals("", nullSafe.getText());
-        assertEquals("", nullSafe.getLanguage());
+        assertNull(nullSafe.getLanguage());
         assertNotNull(nullSafe.getSegments());
         assertNotNull(nullSafe.getAllPauses());
     }

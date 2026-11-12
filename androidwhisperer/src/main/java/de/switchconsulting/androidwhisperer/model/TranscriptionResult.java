@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Complete transcription result containing full text, detected language, segments, and pause intervals.
@@ -29,7 +30,7 @@ import java.util.List;
 public final class TranscriptionResult {
 
     private final String text;
-    private final String language;
+    private final Locale language;
     private final List<SegmentResult> segments;
     private final List<PauseSegment> pauses;
 
@@ -37,17 +38,17 @@ public final class TranscriptionResult {
      * Constructs a transcription result with full text, language, segments, and pauses.
      *
      * @param text full transcribed text
-     * @param language detected language code (e.g. "en", "de")
+     * @param language detected language ({@link Locale})
      * @param segments list of decoded speech segments ({@link SegmentResult})
      * @param pauses list of detected pause intervals ({@link PauseSegment})
      */
     public TranscriptionResult(
             @Nullable String text,
-            @Nullable String language,
+            @Nullable Locale language,
             @Nullable List<SegmentResult> segments,
             @Nullable List<PauseSegment> pauses) {
         this.text = text == null ? "" : text;
-        this.language = language == null ? "" : language;
+        this.language = language;
         this.segments = Collections.unmodifiableList(
                 new ArrayList<>(segments == null
                         ? Collections.emptyList() : segments));
@@ -65,12 +66,12 @@ public final class TranscriptionResult {
     public String getText() { return text; }
 
     /**
-     * Returns the detected language code (e.g. "en", "de").
+     * Returns the detected language ({@link Locale}), or null if no language was provided or detected.
      *
-     * @return language code
+     * @return language locale or null
      */
-    @NonNull
-    public String getLanguage() { return language; }
+    @Nullable
+    public Locale getLanguage() { return language; }
 
     /**
      * Returns the list of speech segments.

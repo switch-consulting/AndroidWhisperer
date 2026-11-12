@@ -333,6 +333,7 @@ public final class AndroidWhisperer implements Closeable {
 
         try {
             Locale locale = options.getLocale();
+            Locale resultLocale = locale;
             String languageParam = null;
             if (locale != null) {
                 if (!isLocaleSupportedByModel(locale)) {
@@ -347,8 +348,8 @@ public final class AndroidWhisperer implements Closeable {
                     String detected = nativeApi.whisper_lang_str(langId);
                     if (detected != null && !detected.isEmpty()) {
                         languageParam = detected;
-                        Locale detectedLocale = Locale.forLanguageTag(detected);
-                        notifyListenersLanguageDetected(detectedLocale);
+                        resultLocale = Locale.forLanguageTag(detected);
+                        notifyListenersLanguageDetected(resultLocale);
                     }
                 }
             }
@@ -462,10 +463,8 @@ public final class AndroidWhisperer implements Closeable {
                 previousSegmentEnd = Math.max(previousSegmentEnd, end);
             }
 
-            String language = languageParam != null ? languageParam : "";
-
             TranscriptionResult result = new TranscriptionResult(
-                    transcript.toString().trim(), language, segments, allPauses);
+                    transcript.toString().trim(), resultLocale, segments, allPauses);
             notifyListenersTranscriptionCompleted(result);
             return result;
         } catch (TranscriptionException e) {

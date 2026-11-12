@@ -121,7 +121,7 @@ public class AndroidWhispererTest {
             TranscriptionResult result = w.transcribe(new float[]{0.1f}, AndroidWhispererOptions.defaults());
             assertNotNull(result);
             assertEquals("Hello world", result.getText());
-            assertEquals("en", result.getLanguage());
+            assertEquals(Locale.ENGLISH, result.getLanguage());
             assertEquals(1, result.getSegments().size());
         }
     }
@@ -318,7 +318,7 @@ public class AndroidWhispererTest {
             TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
             assertNotNull(result);
             assertEquals("Hallo Welt", result.getText());
-            assertEquals("de", result.getLanguage());
+            assertEquals(Locale.GERMAN, result.getLanguage());
             assertEquals("de", passedLanguage.get());
         }
     }
@@ -362,7 +362,7 @@ public class AndroidWhispererTest {
                     PauseMode.BOTH, 300, 100, Locale.ENGLISH);
             TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
             assertNotNull(result);
-            assertEquals("en", result.getLanguage());
+            assertEquals(Locale.ENGLISH, result.getLanguage());
             assertEquals("en", passedLanguage.get());
         }
     }

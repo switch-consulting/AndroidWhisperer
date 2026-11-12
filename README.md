@@ -122,13 +122,15 @@ import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
 import java.io.File;
+import java.util.Locale;
 
 // Load a 16-bit WAV file or convert raw PCM16 bytes
 float[] samples = AudioUtils.readWav(new File("/path/to/audio.wav"));
 
 // Synchronous Transcribe
 TranscriptionResult result = whisperer.transcribe(samples);
-System.out.println("Language: " + result.getLanguage());
+Locale language = result.getLanguage(); // java.util.Locale (or null if none)
+System.out.println("Language: " + language);
 System.out.println("Text: " + result.getText());
 
 // Asynchronous Transcribe (CompletableFuture)
