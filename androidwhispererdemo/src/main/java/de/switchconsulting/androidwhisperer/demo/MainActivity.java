@@ -43,6 +43,8 @@ import de.switchconsulting.androidwhisperer.ModelManager;
 import de.switchconsulting.androidwhisperer.WhisperModel;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
+import de.switchconsulting.androidwhisperer.model.TokenResult;
+import de.switchconsulting.androidwhisperer.model.TranscriptionItem;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
 public class MainActivity extends AppCompatActivity {
@@ -376,24 +378,31 @@ public class MainActivity extends AppCompatActivity {
                     sb.append("--- Transcription Text (").append(selectedModel.getVariant()).append(") ---\n");
                     sb.append(result.getText()).append("\n\n");
 
-                    sb.append("--- Segments ---\n");
-                    List<SegmentResult> segments = result.getSegments();
-                    if (segments != null) {
-                        for (SegmentResult seg : segments) {
-                            sb.append("[").append(seg.getStartMs()).append("ms - ").append(seg.getEndMs()).append("ms]: ")
-                                    .append(seg.getText()).append("\n");
-                        }
-                    }
-
-                    sb.append("\n--- Pause Segments ---\n");
-                    List<PauseSegment> pauses = result.getAllPauses();
-                    if (pauses != null && !pauses.isEmpty()) {
-                        for (PauseSegment pause : pauses) {
-                            sb.append("Pause: ").append(pause.getDurationMs()).append("ms at ")
-                                    .append(pause.getStartMs()).append("ms\n");
+                    sb.append("--- Chronological Timeline (Items) ---\n");
+                    List<TranscriptionItem> items = result.getItems();
+                    if (items != null && !items.isEmpty()) {
+                        for (TranscriptionItem item : items) {
+                            if (item instanceof SegmentResult) {
+                                SegmentResult seg = (SegmentResult) item;
+                                sb.append("[Segment] ").append(seg.getStartMs()).append("ms - ").append(seg.getEndMs()).append("ms: ")
+                                        .append(seg.getText()).append("\n");
+                                for (TranscriptionItem subItem : seg.getItems()) {
+                                    if (subItem instanceof TokenResult) {
+                                        TokenResult tok = (TokenResult) subItem;
+                                        sb.append("  [Token] ").append(tok.getStartMs()).append("ms - ").append(tok.getEndMs()).append("ms: '")
+                                                .append(tok.getText()).append("'\n");
+                                    } else if (subItem instanceof PauseSegment) {
+                                        PauseSegment pause = (PauseSegment) subItem;
+                                        sb.append("  [Pause] ").append(pause.getDurationMs()).append("ms at ").append(pause.getStartMs()).append("ms\n");
+                                    }
+                                }
+                            } else if (item instanceof PauseSegment) {
+                                PauseSegment pause = (PauseSegment) item;
+                                sb.append("[Pause] ").append(pause.getDurationMs()).append("ms at ").append(pause.getStartMs()).append("ms\n");
+                            }
                         }
                     } else {
-                        sb.append("No significant pauses detected.\n");
+                        sb.append("No items detected.\n");
                     }
 
                     tvResults.setText(sb.toString());
