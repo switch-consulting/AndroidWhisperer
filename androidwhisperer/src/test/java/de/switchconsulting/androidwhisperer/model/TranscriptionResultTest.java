@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer.model;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -50,10 +52,11 @@ public class TranscriptionResultTest {
         SegmentResult seg = new SegmentResult("Hi", 0, 100, Collections.emptyList());
         PauseSegment pause = new PauseSegment(100, 200, PauseLevel.SEGMENT);
         TranscriptionResult tr = new TranscriptionResult("Hi", Locale.ENGLISH, Collections.singletonList(seg), Collections.singletonList(pause));
-        org.json.JSONObject json = tr.toJSON();
+        JSONObject json = tr.toJSON();
+        assertEquals("TRANSCRIPTION", json.getString("type"));
         assertEquals("Hi", json.getString("text"));
         assertEquals("en", json.getString("language"));
-        assertEquals(1, json.getJSONArray("segments").length());
-        assertEquals(1, json.getJSONArray("pauses").length());
+        JSONArray items = json.getJSONArray("items");
+        assertEquals(2, items.length());
     }
 }

@@ -16,6 +16,8 @@
 
 package de.switchconsulting.androidwhisperer.model;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -54,12 +56,13 @@ public class SegmentResultTest {
     public void segmentResult_toJSON() throws Exception {
         PauseSegment pause = new PauseSegment(50, 100, PauseLevel.TOKEN);
         SegmentResult segment = new SegmentResult("Hello", 0, 200, Collections.singletonList(pause));
-        org.json.JSONObject json = segment.toJSON();
+        JSONObject json = segment.toJSON();
+        assertEquals("SEGMENT", json.getString("type"));
         assertEquals("Hello", json.getString("text"));
         assertEquals(0, json.getLong("startMs"));
         assertEquals(200, json.getLong("endMs"));
-        org.json.JSONArray pauses = json.getJSONArray("pauses");
-        assertEquals(1, pauses.length());
-        assertEquals(50, pauses.getJSONObject(0).getLong("startMs"));
+        JSONArray items = json.getJSONArray("items");
+        assertEquals(1, items.length());
+        assertEquals(50, items.getJSONObject(0).getLong("startMs"));
     }
 }

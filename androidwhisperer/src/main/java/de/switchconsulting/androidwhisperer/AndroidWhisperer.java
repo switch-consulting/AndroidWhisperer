@@ -29,6 +29,8 @@ import de.switchconsulting.androidwhisperer.internal.WhisperSegmentCallback;
 import de.switchconsulting.androidwhisperer.model.PauseLevel;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
+import de.switchconsulting.androidwhisperer.model.TokenResult;
+import de.switchconsulting.androidwhisperer.model.TranscriptionItem;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
 import java.io.Closeable;
@@ -383,8 +385,7 @@ public final class AndroidWhisperer implements Closeable {
                 throw new TranscriptionException("Invalid segment count");
             }
 
-            List<SegmentResult> segments = new ArrayList<>();
-            List<PauseSegment> allPauses = new ArrayList<>();
+            List<TranscriptionItem> topLevelItems = new ArrayList<>();
             StringBuilder transcript = new StringBuilder();
 
             long previousSegmentEnd = -1;
@@ -402,16 +403,20 @@ public final class AndroidWhisperer implements Closeable {
                             "Invalid timestamps in segment " + i);
                 }
 
-                // Segment gaps represent larger inter-segment pauses.
+                // Inter-segment gaps represent larger pauses between speech segments.
                 if ((options.getPauseMode() == PauseMode.SEGMENT
                         || options.getPauseMode() == PauseMode.BOTH)
                         && previousSegmentEnd >= 0 && start >= previousSegmentEnd) {
-                    addPause(allPauses, previousSegmentEnd, start,
+                    PauseSegment pause = makePause(
+                            previousSegmentEnd, start,
                             options.getSegmentPauseThresholdMs(),
                             PauseLevel.SEGMENT);
+                    if (pause != null) {
+                        topLevelItems.add(pause);
+                    }
                 }
 
-                List<PauseSegment> segmentPauses = new ArrayList<>();
+                List<TranscriptionItem> segmentItems = new ArrayList<>();
 
                 if (tokenMode) {
                     int tokenCount = nativeApi.whisper_full_n_tokens(context, i);
@@ -443,17 +448,19 @@ public final class AndroidWhisperer implements Closeable {
                                     options.getTokenPauseThresholdMs(),
                                     PauseLevel.TOKEN);
                             if (pause != null) {
-                                segmentPauses.add(pause);
-                                allPauses.add(pause);
+                                segmentItems.add(pause);
                             }
                         }
+
+                        segmentItems.add(new TokenResult(token, tokenStart, tokenEnd));
 
                         previousTokenEnd = Math.max(previousTokenEnd, tokenEnd);
                     }
                 }
 
-                segments.add(new SegmentResult(
-                        text, start, end, segmentPauses));
+                SegmentResult segmentResult = new SegmentResult(
+                        text, start, end, segmentItems);
+                topLevelItems.add(segmentResult);
 
                 if (transcript.length() > 0) {
                     transcript.append(' ');
@@ -464,7 +471,7 @@ public final class AndroidWhisperer implements Closeable {
             }
 
             TranscriptionResult result = new TranscriptionResult(
-                    transcript.toString().trim(), resultLocale, segments, allPauses);
+                    transcript.toString().trim(), resultLocale, topLevelItems);
             notifyListenersTranscriptionCompleted(result);
             return result;
         } catch (TranscriptionException e) {
