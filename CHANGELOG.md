@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-SNAPSHOT]
+
+### Added
+- Added `TranscriptionItem` interface and `TokenResult` model to support unified chronological items (segments, tokens, and pauses).
+- Added fluent chaining methods to `AndroidWhispererOptions`, including support for `withThreads(int)`, `withStrategy(SamplingStrategy)`, and `withTranslate(boolean)`.
+- Added `toJSON()` serialization methods to `PauseSegment`, `SegmentResult`, and `TranscriptionResult`.
+- Added default pause mode and threshold constants to `AndroidWhispererOptions` and `PauseMode`.
+
+### Changed
+- Changed `language` property type in `TranscriptionResult` from `String` to `Locale`.
+- Unified transcription handling with `TranscriptionItem` in `AndroidWhisperer`.
+- Updated demo app (`MainActivity`) to render a chronological timeline of `TranscriptionItem`s, tokens, and pauses.
+- Updated build source sets and unit tests.
+
 ## [0.1.0] - Initial Release
 
 ### Added
