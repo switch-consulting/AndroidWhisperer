@@ -359,11 +359,16 @@ public final class AndroidWhisperer implements Closeable {
             boolean tokenMode = options.getPauseMode() == PauseMode.TOKEN
                     || options.getPauseMode() == PauseMode.BOTH;
 
+            int nThreads = options.getThreads();
+            int strategy = options.getSamplingStrategy() == SamplingStrategy.BEAM_SEARCH ? 1 : 0;
+            int translate = options.isTranslate() ? 1 : 0;
+
             int status;
             if (listeners.isEmpty()) {
                 // Direct fallback path when no listeners are registered
                 status = nativeApi.whisper_bridge_transcribe(
-                        context, samples, samples.length, tokenMode ? 1 : 0, languageParam);
+                        context, samples, samples.length, tokenMode ? 1 : 0, languageParam,
+                        nThreads, strategy, translate);
             } else {
                 // Incremental callback path when listeners are registered
                 final StringBuilder liveTranscript = new StringBuilder();
@@ -372,6 +377,7 @@ public final class AndroidWhisperer implements Closeable {
 
                 status = nativeApi.whisper_bridge_transcribe_with_callback(
                         context, samples, samples.length, tokenMode ? 1 : 0, languageParam,
+                        nThreads, strategy, translate,
                         segmentCb, progressCb, null);
             }
 
@@ -522,17 +528,6 @@ public final class AndroidWhisperer implements Closeable {
                     "Invalid native timestamp: " + timestamp);
         }
         return timestamp * 10L;
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private static void addPause(
-            List<PauseSegment> target,
-            long start,
-            long end,
-            long thresholdMs,
-            PauseLevel level) {
-        PauseSegment pause = makePause(start, end, thresholdMs, level);
-        if (pause != null) target.add(pause);
     }
 
     private static PauseSegment makePause(

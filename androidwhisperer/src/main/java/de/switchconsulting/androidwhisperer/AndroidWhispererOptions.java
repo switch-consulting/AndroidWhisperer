@@ -31,10 +31,27 @@ public final class AndroidWhispererOptions {
     /** Default token pause threshold in milliseconds (100 ms). */
     public static final long DEFAULT_TOKEN_PAUSE_THRESHOLD_MS = 100L;
 
+    /** Default number of threads for transcription (4). */
+    public static final int DEFAULT_THREADS = 4;
+
+    /** Default sampling strategy ({@link SamplingStrategy#GREEDY}). */
+    @NonNull
+    public static final SamplingStrategy DEFAULT_SAMPLING_STRATEGY = SamplingStrategy.DEFAULT;
+
+    /** Default translation setting (false). */
+    public static final boolean DEFAULT_TRANSLATE = false;
+
+    /** Constant representing language auto-detection ({@code null}). */
+    @Nullable
+    public static final Locale LOCALE_AUTO_DETECT = null;
+
     private PauseMode pauseMode = PauseMode.DEFAULT;
     private long segmentPauseThresholdMs = DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS;
     private long tokenPauseThresholdMs = DEFAULT_TOKEN_PAUSE_THRESHOLD_MS;
-    private Locale locale = null;
+    private Locale locale = LOCALE_AUTO_DETECT;
+    private int nThreads = DEFAULT_THREADS;
+    private SamplingStrategy samplingStrategy = DEFAULT_SAMPLING_STRATEGY;
+    private boolean translate = DEFAULT_TRANSLATE;
 
     private AndroidWhispererOptions() {
     }
@@ -88,6 +105,34 @@ public final class AndroidWhispererOptions {
     }
 
     /**
+     * Returns the configured number of threads.
+     *
+     * @return number of threads
+     */
+    public int getThreads() {
+        return nThreads;
+    }
+
+    /**
+     * Returns the configured sampling strategy.
+     *
+     * @return the sampling strategy
+     */
+    @NonNull
+    public SamplingStrategy getSamplingStrategy() {
+        return samplingStrategy;
+    }
+
+    /**
+     * Returns whether translation to English is enabled.
+     *
+     * @return true if translation is enabled, false otherwise
+     */
+    public boolean isTranslate() {
+        return translate;
+    }
+
+    /**
      * Sets the pause mode and returns this options instance for chaining.
      *
      * @param pauseMode the pause analysis mode
@@ -138,6 +183,45 @@ public final class AndroidWhispererOptions {
     @NonNull
     public AndroidWhispererOptions withLocale(@Nullable Locale locale) {
         this.locale = locale;
+        return this;
+    }
+
+    /**
+     * Sets the number of threads and returns this options instance for chaining.
+     *
+     * @param nThreads number of threads (must be positive)
+     * @return this options instance
+     */
+    @NonNull
+    public AndroidWhispererOptions withThreads(int nThreads) {
+        if (nThreads <= 0) {
+            throw new IllegalArgumentException("Number of threads must be positive");
+        }
+        this.nThreads = nThreads;
+        return this;
+    }
+
+    /**
+     * Sets the sampling strategy and returns this options instance for chaining.
+     *
+     * @param samplingStrategy the sampling strategy
+     * @return this options instance
+     */
+    @NonNull
+    public AndroidWhispererOptions withStrategy(@NonNull SamplingStrategy samplingStrategy) {
+        this.samplingStrategy = samplingStrategy;
+        return this;
+    }
+
+    /**
+     * Sets whether translation to English is enabled and returns this options instance for chaining.
+     *
+     * @param translate true to translate to English, false otherwise
+     * @return this options instance
+     */
+    @NonNull
+    public AndroidWhispererOptions withTranslate(boolean translate) {
+        this.translate = translate;
         return this;
     }
 }

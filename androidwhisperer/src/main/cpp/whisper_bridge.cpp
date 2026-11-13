@@ -95,17 +95,25 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe(
         const float * samples,
         int n_samples,
         int token_timestamps,
-        const char * language) {
+        const char * language,
+        int n_threads,
+        int strategy,
+        int translate) {
     if (ctx == nullptr || samples == nullptr || n_samples <= 0) {
         return -1;
     }
 
-    struct whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+    struct whisper_full_params params = whisper_full_default_params(
+            strategy == 1 ? WHISPER_SAMPLING_BEAM_SEARCH : WHISPER_SAMPLING_GREEDY);
     params.print_realtime   = false;
     params.print_progress   = false;
     params.print_timestamps = false;
     params.print_special    = false;
     params.token_timestamps = token_timestamps != 0;
+    if (n_threads > 0) {
+        params.n_threads = n_threads;
+    }
+    params.translate = translate != 0;
     if (language != nullptr && std::strlen(language) > 0) {
         params.language = language;
     }
@@ -121,6 +129,9 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe(
  * @param n_samples Total number of samples.
  * @param token_timestamps Non-zero to enable token-level timestamp alignment.
  * @param language Optional language code (e.g. "en", "de"), or nullptr for auto-detection.
+ * @param n_threads Number of threads for inference.
+ * @param strategy Sampling strategy (0 = greedy, 1 = beam search).
+ * @param translate Non-zero to translate to English.
  * @param segment_cb Callback invoked when new text segments are decoded.
  * @param progress_cb Callback invoked on progress updates (0 to 100).
  * @param user_data Arbitrary pointer forwarded to callbacks.
@@ -132,6 +143,9 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe_with_callback(
         int n_samples,
         int token_timestamps,
         const char * language,
+        int n_threads,
+        int strategy,
+        int translate,
         whisper_bridge_segment_cb segment_cb,
         whisper_bridge_progress_cb progress_cb,
         void * user_data) {
@@ -139,12 +153,17 @@ WHISPER_BRIDGE_API int whisper_bridge_transcribe_with_callback(
         return -1;
     }
 
-    struct whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+    struct whisper_full_params params = whisper_full_default_params(
+            strategy == 1 ? WHISPER_SAMPLING_BEAM_SEARCH : WHISPER_SAMPLING_GREEDY);
     params.print_realtime   = false;
     params.print_progress   = false;
     params.print_timestamps = false;
     params.print_special    = false;
     params.token_timestamps = token_timestamps != 0;
+    if (n_threads > 0) {
+        params.n_threads = n_threads;
+    }
+    params.translate = translate != 0;
     if (language != nullptr && std::strlen(language) > 0) {
         params.language = language;
     }

@@ -43,7 +43,10 @@ public interface WhisperBridge extends Library {
             float[] samples,
             int sampleCount,
             int tokenTimestamps,
-            String language);
+            String language,
+            int nThreads,
+            int strategy,
+            int translate);
 
     /**
      * Executes inference with incremental segment and progress callbacks.
@@ -55,6 +58,9 @@ public interface WhisperBridge extends Library {
             int sampleCount,
             int tokenTimestamps,
             String language,
+            int nThreads,
+            int strategy,
+            int translate,
             WhisperSegmentCallback segmentCallback,
             WhisperProgressCallback progressCallback,
             Pointer userData);

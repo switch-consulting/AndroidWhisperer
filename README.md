@@ -81,6 +81,22 @@ The library includes built-in configurations via `WhisperModel` that point to qu
 
 ---
 
+## Configuration Parameters
+
+Transcription behavior, performance, and pause analysis can be customized using `AndroidWhispererOptions`:
+
+| Option / Method | Description | Default Value |
+| :--- | :--- | :--- |
+| `withPauseMode(PauseMode)` | Mode for analyzing pauses/silence (`NONE`, `SEGMENT`, `TOKEN`, `BOTH`). | `PauseMode.BOTH` |
+| `withSegmentPauseThresholdMs(long)` | Minimum duration in milliseconds to detect an inter-segment pause. | `300` |
+| `withTokenPauseThresholdMs(long)` | Minimum duration in milliseconds to detect an inter-token pause. | `100` |
+| `withLocale(Locale)` | Preselected language locale (e.g., `Locale.ENGLISH`, `Locale.GERMAN`), or `AndroidWhispererOptions.LOCALE_AUTO_DETECT` (`null`) for language auto-detection. | `AndroidWhispererOptions.LOCALE_AUTO_DETECT` (`null`) |
+| `withThreads(int)` | Number of CPU threads used for native inference execution. | `4` |
+| `withStrategy(SamplingStrategy)` | Sampling strategy (`SamplingStrategy.GREEDY` for fast decoding, `SamplingStrategy.BEAM_SEARCH` for higher accuracy). | `SamplingStrategy.GREEDY` |
+| `withTranslate(boolean)` | Whether to translate spoken audio in any supported language directly into English text. | `false` |
+
+---
+
 ## Code Examples
 
 ### Java Example

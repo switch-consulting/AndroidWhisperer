@@ -23,6 +23,7 @@ import java.util.Locale;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class AndroidWhispererOptionsTest {
 
@@ -34,6 +35,9 @@ public class AndroidWhispererOptionsTest {
         assertEquals(AndroidWhispererOptions.DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS, opts.getSegmentPauseThresholdMs());
         assertEquals(AndroidWhispererOptions.DEFAULT_TOKEN_PAUSE_THRESHOLD_MS, opts.getTokenPauseThresholdMs());
         assertNull(opts.getLocale());
+        assertEquals(AndroidWhispererOptions.DEFAULT_THREADS, opts.getThreads());
+        assertEquals(AndroidWhispererOptions.DEFAULT_SAMPLING_STRATEGY, opts.getSamplingStrategy());
+        assertEquals(AndroidWhispererOptions.DEFAULT_TRANSLATE, opts.isTranslate());
     }
 
     @Test
@@ -41,11 +45,17 @@ public class AndroidWhispererOptionsTest {
         AndroidWhispererOptions custom = AndroidWhispererOptions.defaults()
                 .withPauseMode(PauseMode.TOKEN)
                 .withSegmentPauseThresholdMs(500)
-                .withTokenPauseThresholdMs(150);
+                .withTokenPauseThresholdMs(150)
+                .withThreads(8)
+                .withStrategy(SamplingStrategy.BEAM_SEARCH)
+                .withTranslate(true);
         assertEquals(PauseMode.TOKEN, custom.getPauseMode());
         assertEquals(500, custom.getSegmentPauseThresholdMs());
         assertEquals(150, custom.getTokenPauseThresholdMs());
         assertNull(custom.getLocale());
+        assertEquals(8, custom.getThreads());
+        assertEquals(SamplingStrategy.BEAM_SEARCH, custom.getSamplingStrategy());
+        assertTrue(custom.isTranslate());
     }
 
     @Test
@@ -83,5 +93,15 @@ public class AndroidWhispererOptionsTest {
     @Test(expected = IllegalArgumentException.class)
     public void options_negativeTokenThreshold_throws() {
         AndroidWhispererOptions.defaults().withTokenPauseThresholdMs(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void options_zeroThreads_throws() {
+        AndroidWhispererOptions.defaults().withThreads(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void options_negativeThreads_throws() {
+        AndroidWhispererOptions.defaults().withThreads(-2);
     }
 }
