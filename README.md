@@ -133,6 +133,15 @@ Locale language = result.getLanguage(); // java.util.Locale (or null if none)
 System.out.println("Language: " + language);
 System.out.println("Text: " + result.getText());
 
+// Transcribe with custom options using fluent chaining
+AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+    .withPauseMode(PauseMode.BOTH)
+    .withSegmentPauseThresholdMs(300)
+    .withTokenPauseThresholdMs(100)
+    .withLocale(Locale.ENGLISH);
+
+TranscriptionResult resultWithOptions = whisperer.transcribe(samples, options);
+
 // Asynchronous Transcribe (CompletableFuture)
 whisperer.transcribeAsync(samples).thenAccept(asyncResult -> {
     System.out.println("Async Text: " + asyncResult.getText());

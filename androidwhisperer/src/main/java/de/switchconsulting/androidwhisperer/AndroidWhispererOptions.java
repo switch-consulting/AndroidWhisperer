@@ -31,46 +31,12 @@ public final class AndroidWhispererOptions {
     /** Default token pause threshold in milliseconds (100 ms). */
     public static final long DEFAULT_TOKEN_PAUSE_THRESHOLD_MS = 100L;
 
-    private final PauseMode pauseMode;
-    private final long segmentPauseThresholdMs;
-    private final long tokenPauseThresholdMs;
-    private final Locale locale;
+    private PauseMode pauseMode = PauseMode.DEFAULT;
+    private long segmentPauseThresholdMs = DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS;
+    private long tokenPauseThresholdMs = DEFAULT_TOKEN_PAUSE_THRESHOLD_MS;
+    private Locale locale = null;
 
-    /**
-     * Creates new transcription options with specified pause mode and thresholds.
-     *
-     * @param pauseMode the pause analysis mode ({@link PauseMode})
-     * @param segmentPauseThresholdMs minimum duration in milliseconds to detect a segment pause
-     * @param tokenPauseThresholdMs minimum duration in milliseconds to detect a token pause
-     */
-    public AndroidWhispererOptions(
-            @NonNull PauseMode pauseMode,
-            long segmentPauseThresholdMs,
-            long tokenPauseThresholdMs) {
-        this(pauseMode, segmentPauseThresholdMs, tokenPauseThresholdMs, null);
-    }
-
-    /**
-     * Creates new transcription options with specified pause mode, thresholds, and language locale.
-     *
-     * @param pauseMode the pause analysis mode ({@link PauseMode})
-     * @param segmentPauseThresholdMs minimum duration in milliseconds to detect a segment pause
-     * @param tokenPauseThresholdMs minimum duration in milliseconds to detect a token pause
-     * @param locale preselected language locale, or {@code null} for default/auto-detection
-     */
-    public AndroidWhispererOptions(
-            @NonNull PauseMode pauseMode,
-            long segmentPauseThresholdMs,
-            long tokenPauseThresholdMs,
-            @Nullable Locale locale) {
-        if (segmentPauseThresholdMs < 0
-                || tokenPauseThresholdMs < 0) {
-            throw new IllegalArgumentException("Invalid options");
-        }
-        this.pauseMode = pauseMode;
-        this.segmentPauseThresholdMs = segmentPauseThresholdMs;
-        this.tokenPauseThresholdMs = tokenPauseThresholdMs;
-        this.locale = locale;
+    private AndroidWhispererOptions() {
     }
 
     /**
@@ -80,7 +46,7 @@ public final class AndroidWhispererOptions {
      */
     @NonNull
     public static AndroidWhispererOptions defaults() {
-        return new AndroidWhispererOptions(PauseMode.DEFAULT, DEFAULT_SEGMENT_PAUSE_THRESHOLD_MS, DEFAULT_TOKEN_PAUSE_THRESHOLD_MS, null);
+        return new AndroidWhispererOptions();
     }
 
     /**
@@ -119,5 +85,59 @@ public final class AndroidWhispererOptions {
     @Nullable
     public Locale getLocale() {
         return locale;
+    }
+
+    /**
+     * Sets the pause mode and returns this options instance for chaining.
+     *
+     * @param pauseMode the pause analysis mode
+     * @return this options instance
+     */
+    @NonNull
+    public AndroidWhispererOptions withPauseMode(@NonNull PauseMode pauseMode) {
+        this.pauseMode = pauseMode;
+        return this;
+    }
+
+    /**
+     * Sets the segment pause threshold in milliseconds and returns this options instance for chaining.
+     *
+     * @param segmentPauseThresholdMs minimum duration in milliseconds to detect a segment pause
+     * @return this options instance
+     */
+    @NonNull
+    public AndroidWhispererOptions withSegmentPauseThresholdMs(long segmentPauseThresholdMs) {
+        if (segmentPauseThresholdMs < 0) {
+            throw new IllegalArgumentException("Segment pause threshold cannot be negative");
+        }
+        this.segmentPauseThresholdMs = segmentPauseThresholdMs;
+        return this;
+    }
+
+    /**
+     * Sets the token pause threshold in milliseconds and returns this options instance for chaining.
+     *
+     * @param tokenPauseThresholdMs minimum duration in milliseconds to detect a token pause
+     * @return this options instance
+     */
+    @NonNull
+    public AndroidWhispererOptions withTokenPauseThresholdMs(long tokenPauseThresholdMs) {
+        if (tokenPauseThresholdMs < 0) {
+            throw new IllegalArgumentException("Token pause threshold cannot be negative");
+        }
+        this.tokenPauseThresholdMs = tokenPauseThresholdMs;
+        return this;
+    }
+
+    /**
+     * Sets the locale and returns this options instance for chaining.
+     *
+     * @param locale preselected language locale, or {@code null} for default/auto-detection
+     * @return this options instance
+     */
+    @NonNull
+    public AndroidWhispererOptions withLocale(@Nullable Locale locale) {
+        this.locale = locale;
+        return this;
     }
 }

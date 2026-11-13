@@ -313,8 +313,11 @@ public class AndroidWhispererTest {
 
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
-            AndroidWhispererOptions options = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, Locale.GERMAN);
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(Locale.GERMAN);
             TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
             assertNotNull(result);
             assertEquals("Hallo Welt", result.getText());
@@ -358,8 +361,11 @@ public class AndroidWhispererTest {
 
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
-            AndroidWhispererOptions options = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, Locale.ENGLISH);
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(Locale.ENGLISH);
             TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
             assertNotNull(result);
             assertEquals(Locale.ENGLISH, result.getLanguage());
@@ -384,8 +390,11 @@ public class AndroidWhispererTest {
 
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
-            AndroidWhispererOptions options = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, Locale.GERMAN);
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(Locale.GERMAN);
             w.transcribe(new float[]{0.1f}, options);
             fail("Expected LanguageNotSupportedException");
         } catch (LanguageNotSupportedException e) {
@@ -414,8 +423,11 @@ public class AndroidWhispererTest {
         Locale unsupportedLocale = new Locale("xyz");
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
-            AndroidWhispererOptions options = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, unsupportedLocale);
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(unsupportedLocale);
             w.transcribe(new float[]{0.1f}, options);
             fail("Expected LanguageNotSupportedException");
         } catch (LanguageNotSupportedException e) {
@@ -442,8 +454,11 @@ public class AndroidWhispererTest {
         Locale emptyLocale = new Locale("");
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("dummy.bin"));
-            AndroidWhispererOptions options = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, emptyLocale);
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(emptyLocale);
             w.transcribe(new float[]{0.1f}, options);
             fail("Expected LanguageNotSupportedException");
         } catch (LanguageNotSupportedException e) {
@@ -488,8 +503,11 @@ public class AndroidWhispererTest {
                 }
             });
 
-            AndroidWhispererOptions options = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, Locale.GERMAN);
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(Locale.GERMAN);
             w.transcribe(new float[]{0.1f}, options);
             fail("Expected LanguageNotSupportedException");
         } catch (LanguageNotSupportedException e) {
@@ -521,8 +539,11 @@ public class AndroidWhispererTest {
         try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
             w.initModelFromFile(new File("ggml-tiny.bin"));
             // German is supported by multilingual model
-            AndroidWhispererOptions germanOpts = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, Locale.GERMAN);
+            AndroidWhispererOptions germanOpts = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(Locale.GERMAN);
             assertNotNull(w.transcribe(new float[]{0.1f}, germanOpts));
         }
     }
@@ -577,8 +598,11 @@ public class AndroidWhispererTest {
                 }
             });
 
-            AndroidWhispererOptions options = new AndroidWhispererOptions(
-                    PauseMode.BOTH, 300, 100, Locale.GERMAN);
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withPauseMode(PauseMode.BOTH)
+                    .withSegmentPauseThresholdMs(300)
+                    .withTokenPauseThresholdMs(100)
+                    .withLocale(Locale.GERMAN);
             TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
             assertNotNull(result);
             assertFalse(languageDetectedCalled.get());

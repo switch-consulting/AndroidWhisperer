@@ -103,8 +103,11 @@ public class TranscriptionManager {
                 whisperer.init(context, selectedModel);
 
                 float[] samples = AudioRecorder.convertPcmToFloat(pcmFile);
-                AndroidWhispererOptions options = new AndroidWhispererOptions(
-                        PauseMode.BOTH, 300, 100, locale);
+                AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                        .withPauseMode(PauseMode.BOTH)
+                        .withSegmentPauseThresholdMs(300)
+                        .withTokenPauseThresholdMs(100)
+                        .withLocale(locale);
                 return whisperer.transcribe(samples, options);
             } catch (Exception e) {
                 throw new RuntimeException(e);

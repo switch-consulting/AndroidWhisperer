@@ -37,9 +37,11 @@ public class AndroidWhispererOptionsTest {
     }
 
     @Test
-    public void customConstructor_setsFieldsCorrectly() {
-        AndroidWhispererOptions custom = new AndroidWhispererOptions(
-                PauseMode.TOKEN, 500, 150);
+    public void fluentChaining_setsFieldsCorrectly() {
+        AndroidWhispererOptions custom = AndroidWhispererOptions.defaults()
+                .withPauseMode(PauseMode.TOKEN)
+                .withSegmentPauseThresholdMs(500)
+                .withTokenPauseThresholdMs(150);
         assertEquals(PauseMode.TOKEN, custom.getPauseMode());
         assertEquals(500, custom.getSegmentPauseThresholdMs());
         assertEquals(150, custom.getTokenPauseThresholdMs());
@@ -47,9 +49,12 @@ public class AndroidWhispererOptionsTest {
     }
 
     @Test
-    public void customConstructor_withLocale_setsLocaleCorrectly() {
-        AndroidWhispererOptions custom = new AndroidWhispererOptions(
-                PauseMode.TOKEN, 500, 150, Locale.GERMAN);
+    public void fluentChaining_withLocale_setsLocaleCorrectly() {
+        AndroidWhispererOptions custom = AndroidWhispererOptions.defaults()
+                .withPauseMode(PauseMode.TOKEN)
+                .withSegmentPauseThresholdMs(500)
+                .withTokenPauseThresholdMs(150)
+                .withLocale(Locale.GERMAN);
         assertEquals(PauseMode.TOKEN, custom.getPauseMode());
         assertEquals(500, custom.getSegmentPauseThresholdMs());
         assertEquals(150, custom.getTokenPauseThresholdMs());
@@ -57,27 +62,26 @@ public class AndroidWhispererOptionsTest {
     }
 
     @Test
-    public void customConstructor_zeroThresholds_allowed() {
-        AndroidWhispererOptions zero = new AndroidWhispererOptions(
-                PauseMode.NONE, 0, 0);
+    public void fluentChaining_zeroThresholds_allowed() {
+        AndroidWhispererOptions zero = AndroidWhispererOptions.defaults()
+                .withPauseMode(PauseMode.NONE)
+                .withSegmentPauseThresholdMs(0)
+                .withTokenPauseThresholdMs(0);
         assertEquals(PauseMode.NONE, zero.getPauseMode());
         assertEquals(0, zero.getSegmentPauseThresholdMs());
         assertEquals(0, zero.getTokenPauseThresholdMs());
         assertNull(zero.getLocale());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void options_nullPauseMode_throws() {
-        new AndroidWhispererOptions(null, 300, 100);
-    }
+
 
     @Test(expected = IllegalArgumentException.class)
     public void options_negativeSegmentThreshold_throws() {
-        new AndroidWhispererOptions(PauseMode.BOTH, -1, 100);
+        AndroidWhispererOptions.defaults().withSegmentPauseThresholdMs(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void options_negativeTokenThreshold_throws() {
-        new AndroidWhispererOptions(PauseMode.BOTH, 300, -1);
+        AndroidWhispererOptions.defaults().withTokenPauseThresholdMs(-1);
     }
 }
