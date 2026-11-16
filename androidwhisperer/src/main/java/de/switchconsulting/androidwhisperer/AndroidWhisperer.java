@@ -476,8 +476,9 @@ public final class AndroidWhisperer implements Closeable {
                 previousSegmentEnd = Math.max(previousSegmentEnd, end);
             }
 
+            Locale translatedLocale = options.isTranslate() ? Locale.ENGLISH : null;
             TranscriptionResult result = new TranscriptionResult(
-                    transcript.toString().trim(), resultLocale, topLevelItems);
+                    transcript.toString().trim(), resultLocale, translatedLocale, topLevelItems);
             notifyListenersTranscriptionCompleted(result);
             return result;
         } catch (TranscriptionException e) {

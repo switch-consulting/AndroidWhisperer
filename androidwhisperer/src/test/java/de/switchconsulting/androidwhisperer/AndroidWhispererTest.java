@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -764,5 +765,105 @@ public class AndroidWhispererTest {
             assertEquals(1, freeCount.get());
         }
         assertEquals(2, freeCount.get());
+    }
+
+    @Test
+    public void transcribe_withTranslationEnabled_setsTranslatedLanguageToEnglish() {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    switch (name) {
+                        case "whisper_init_from_file":
+                            return new Pointer(999L);
+                        case "whisper_is_multilingual":
+                            return 1;
+                        case "whisper_lang_id":
+                            return "de".equals(args[0]) ? 2 : -1;
+                        case "whisper_bridge_transcribe":
+                            return 0;
+                        case "whisper_full_n_segments":
+                            return 1;
+                        case "whisper_full_get_segment_t0":
+                            return 0L;
+                        case "whisper_full_get_segment_t1":
+                            return 100L;
+                        case "whisper_full_get_segment_text":
+                            return "Hello";
+                        case "whisper_full_n_tokens":
+                            return 0;
+                        case "whisper_free":
+                            return null;
+                        default:
+                            if ("toString".equals(method.getName())) return "WhisperBridgeProxy";
+                            if ("equals".equals(method.getName())) return args.length > 0 && proxy == args[0];
+                            if ("hashCode".equals(method.getName())) return System.identityHashCode(proxy);
+                            if (method.getReturnType() == int.class) return 0;
+                            if (method.getReturnType() == long.class) return 0L;
+                            return null;
+                    }
+                });
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withLocale(Locale.GERMAN)
+                    .withTranslate(true);
+            TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
+            assertNotNull(result);
+            assertEquals(Locale.GERMAN, result.getLanguage());
+            assertEquals(Locale.ENGLISH, result.getTranslatedLanguage());
+        }
+    }
+
+    @Test
+    public void transcribe_withTranslationDisabled_setsTranslatedLanguageToNull() {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    switch (name) {
+                        case "whisper_init_from_file":
+                            return new Pointer(999L);
+                        case "whisper_is_multilingual":
+                            return 1;
+                        case "whisper_lang_id":
+                            return "de".equals(args[0]) ? 2 : -1;
+                        case "whisper_bridge_transcribe":
+                            return 0;
+                        case "whisper_full_n_segments":
+                            return 1;
+                        case "whisper_full_get_segment_t0":
+                            return 0L;
+                        case "whisper_full_get_segment_t1":
+                            return 100L;
+                        case "whisper_full_get_segment_text":
+                            return "Hallo";
+                        case "whisper_full_n_tokens":
+                            return 0;
+                        case "whisper_free":
+                            return null;
+                        default:
+                            if ("toString".equals(method.getName())) return "WhisperBridgeProxy";
+                            if ("equals".equals(method.getName())) return args.length > 0 && proxy == args[0];
+                            if ("hashCode".equals(method.getName())) return System.identityHashCode(proxy);
+                            if (method.getReturnType() == int.class) return 0;
+                            if (method.getReturnType() == long.class) return 0L;
+                            return null;
+                    }
+                });
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
+                    .withLocale(Locale.GERMAN)
+                    .withTranslate(false);
+            TranscriptionResult result = w.transcribe(new float[]{0.1f}, options);
+            assertNotNull(result);
+            assertEquals(Locale.GERMAN, result.getLanguage());
+            assertNull(result.getTranslatedLanguage());
+        }
     }
 }

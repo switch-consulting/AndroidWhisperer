@@ -36,10 +36,43 @@ public final class TranscriptionResult implements TranscriptionItem {
 
     private final String text;
     private final Locale language;
+    private final Locale translatedLanguage;
     private final List<TranscriptionItem> items;
     private final long startMs;
     private final long endMs;
     private final long durationMs;
+
+    /**
+     * Constructs a transcription result with full text, language, translated language, and chronological items.
+     *
+     * @param text full transcribed text
+     * @param language detected language ({@link Locale})
+     * @param translatedLanguage target language if translated ({@link Locale}), or null if not translated
+     * @param items chronological list of transcription items (segments and pauses)
+     */
+    public TranscriptionResult(
+            @Nullable String text,
+            @Nullable Locale language,
+            @Nullable Locale translatedLanguage,
+            @Nullable List<? extends TranscriptionItem> items) {
+        this.text = text == null ? "" : text;
+        this.language = language;
+        this.translatedLanguage = translatedLanguage;
+        List<TranscriptionItem> mutableItems = new ArrayList<>(items == null ? Collections.emptyList() : items);
+        // Sort items chronologically by startMs
+        mutableItems.sort(Comparator.comparingLong(TranscriptionItem::getStartMs));
+        this.items = Collections.unmodifiableList(mutableItems);
+
+        if (!this.items.isEmpty()) {
+            this.startMs = this.items.get(0).getStartMs();
+            this.endMs = this.items.get(this.items.size() - 1).getEndMs();
+            this.durationMs = Math.max(0, this.endMs - this.startMs);
+        } else {
+            this.startMs = 0;
+            this.endMs = 0;
+            this.durationMs = 0;
+        }
+    }
 
     /**
      * Constructs a transcription result with full text, language, and chronological items.
@@ -52,12 +85,36 @@ public final class TranscriptionResult implements TranscriptionItem {
             @Nullable String text,
             @Nullable Locale language,
             @Nullable List<? extends TranscriptionItem> items) {
+        this(text, language, null, items);
+    }
+
+    /**
+     * Constructs a transcription result with full text, language, translated language, segments, and pauses.
+     *
+     * @param text full transcribed text
+     * @param language detected language ({@link Locale})
+     * @param translatedLanguage target language if translated ({@link Locale}), or null if not translated
+     * @param segments list of decoded speech segments ({@link SegmentResult})
+     * @param pauses list of detected pause intervals ({@link PauseSegment})
+     */
+    public TranscriptionResult(
+            @Nullable String text,
+            @Nullable Locale language,
+            @Nullable Locale translatedLanguage,
+            @Nullable List<SegmentResult> segments,
+            @Nullable List<PauseSegment> pauses) {
         this.text = text == null ? "" : text;
         this.language = language;
-        List<TranscriptionItem> mutableItems = new ArrayList<>(items == null ? Collections.emptyList() : items);
-        // Sort items chronologically by startMs
-        mutableItems.sort(Comparator.comparingLong(TranscriptionItem::getStartMs));
-        this.items = Collections.unmodifiableList(mutableItems);
+        this.translatedLanguage = translatedLanguage;
+        List<TranscriptionItem> combined = new ArrayList<>();
+        if (segments != null) {
+            combined.addAll(segments);
+        }
+        if (pauses != null) {
+            combined.addAll(pauses);
+        }
+        combined.sort(Comparator.comparingLong(TranscriptionItem::getStartMs));
+        this.items = Collections.unmodifiableList(combined);
 
         if (!this.items.isEmpty()) {
             this.startMs = this.items.get(0).getStartMs();
@@ -83,27 +140,7 @@ public final class TranscriptionResult implements TranscriptionItem {
             @Nullable Locale language,
             @Nullable List<SegmentResult> segments,
             @Nullable List<PauseSegment> pauses) {
-        this.text = text == null ? "" : text;
-        this.language = language;
-        List<TranscriptionItem> combined = new ArrayList<>();
-        if (segments != null) {
-            combined.addAll(segments);
-        }
-        if (pauses != null) {
-            combined.addAll(pauses);
-        }
-        combined.sort(Comparator.comparingLong(TranscriptionItem::getStartMs));
-        this.items = Collections.unmodifiableList(combined);
-
-        if (!this.items.isEmpty()) {
-            this.startMs = this.items.get(0).getStartMs();
-            this.endMs = this.items.get(this.items.size() - 1).getEndMs();
-            this.durationMs = Math.max(0, this.endMs - this.startMs);
-        } else {
-            this.startMs = 0;
-            this.endMs = 0;
-            this.durationMs = 0;
-        }
+        this(text, language, null, segments, pauses);
     }
 
     /**
@@ -121,6 +158,14 @@ public final class TranscriptionResult implements TranscriptionItem {
      */
     @Nullable
     public Locale getLanguage() { return language; }
+
+    /**
+     * Returns the target translated language ({@link Locale}), or null if no translation was performed.
+     *
+     * @return translated language locale or null
+     */
+    @Nullable
+    public Locale getTranslatedLanguage() { return translatedLanguage; }
 
     @Override
     public long getStartMs() { return startMs; }
@@ -174,7 +219,7 @@ public final class TranscriptionResult implements TranscriptionItem {
     /**
      * Returns a JSON object representation of this transcription result.
      *
-     * @return JSON object containing type, text, language, startMs, endMs, durationMs, and items
+     * @return JSON object containing type, text, language, translatedLanguage, startMs, endMs, durationMs, and items
      * @throws JSONException if an error occurs while creating the JSON object
      */
     @NonNull
@@ -184,6 +229,7 @@ public final class TranscriptionResult implements TranscriptionItem {
         json.put("type", "TRANSCRIPTION");
         json.put("text", text);
         json.put("language", language != null ? language.toLanguageTag() : JSONObject.NULL);
+        json.put("translatedLanguage", translatedLanguage != null ? translatedLanguage.toLanguageTag() : JSONObject.NULL);
         json.put("startMs", startMs);
         json.put("endMs", endMs);
         json.put("durationMs", durationMs);
