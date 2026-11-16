@@ -214,8 +214,11 @@ ModelManager.ensureModelAsync(context, WhisperModel.BASE, object : ModelDownload
 #### 2. Prepare Audio & Transcribe
 
 ```kotlin
+import de.switchconsulting.androidwhisperer.AndroidWhispererOptions
 import de.switchconsulting.androidwhisperer.AudioUtils
+import de.switchconsulting.androidwhisperer.PauseMode
 import java.io.File
+import java.util.Locale
 
 // Load WAV audio (automatically resampled & normalized to 16 kHz mono float)
 val samples = AudioUtils.readWav(File("/path/to/audio.wav"))
@@ -225,6 +228,15 @@ val samples = AudioUtils.readWav(File("/path/to/audio.wav"))
 
 // Run transcription (best called on a background thread/coroutine dispatcher)
 val result = whisperer.transcribe(samples)
+
+// Transcribe with custom options using fluent chaining
+val options = AndroidWhispererOptions.defaults()
+    .withPauseMode(PauseMode.BOTH)
+    .withSegmentPauseThresholdMs(300)
+    .withTokenPauseThresholdMs(100)
+    .withLocale(Locale.ENGLISH)
+
+val resultWithOptions = whisperer.transcribe(samples, options)
 
 println("Detected Language: ${result.language}")
 println("Full Text: ${result.text}")
