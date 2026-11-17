@@ -40,7 +40,7 @@ Then add the dependency to your app module's `build.gradle`:
 
 ```groovy
 dependencies {
-    implementation 'de.switch-consulting:androidwhisperer:0.1.0'
+    implementation 'de.switch-consulting:androidwhisperer:0.2.0'
 }
 ```
 
