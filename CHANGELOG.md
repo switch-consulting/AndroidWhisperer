@@ -8,16 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0-SNAPSHOT]
 
 ### Added
-- Added `TranscriptionItem` interface and `TokenResult` model to support unified chronological items (segments, tokens, and pauses).
-- Added fluent chaining methods to `AndroidWhispererOptions`, including support for `withThreads(int)`, `withStrategy(SamplingStrategy)`, and `withTranslate(boolean)`.
-- Added `toJSON()` serialization methods to `PauseSegment`, `SegmentResult`, and `TranscriptionResult`.
-- Added default pause mode and threshold constants to `AndroidWhispererOptions` and `PauseMode`.
+- Added `SamplingStrategy` enum (`GREEDY`, `BEAM_SEARCH`) to configure Whisper decoding strategy.
+- Added support for CPU thread count (`withThreads(int)`), sampling strategy (`withStrategy(SamplingStrategy)`), and translation (`withTranslate(boolean)`) in `AndroidWhispererOptions` and native C++ bridge.
+- Added `translatedLanguage` field (`Locale`) to `TranscriptionResult` to report the target language when translation is enabled.
+- Added `TranscriptionItem` interface and `TokenResult` model to support unified chronological timeline items (speech segments, tokens, and pause intervals).
+- Added `toJSON()` serialization methods to `PauseSegment`, `SegmentResult`, `TokenResult`, and `TranscriptionResult`.
+- Added default pause mode, threshold, thread count, and sampling strategy constants to `AndroidWhispererOptions` and `PauseMode`.
+- Added `@author` Javadoc tags across library and demo source files.
 
 ### Changed
 - Changed `language` property type in `TranscriptionResult` from `String` to `Locale`.
-- Unified transcription handling with `TranscriptionItem` in `AndroidWhisperer`.
+- Unified transcription handling with `TranscriptionItem` interface in `AndroidWhisperer`.
 - Updated demo app (`MainActivity`) to render a chronological timeline of `TranscriptionItem`s, tokens, and pauses.
-- Updated build source sets and unit tests.
+- Updated build source sets and Gradle dependencies.
+
+### Removed
+- Removed legacy constructors and `getAllPauses()` method from `TranscriptionResult` in favor of unified `getItems()` or filtering items.
 
 ## [0.1.0] - Initial Release
 
