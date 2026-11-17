@@ -27,6 +27,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class AudioRecorder {
     private static final String TAG = "AudioRecorder";
     private static final int SAMPLE_RATE = 16000;

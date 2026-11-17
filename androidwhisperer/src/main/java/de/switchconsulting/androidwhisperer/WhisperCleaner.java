@@ -21,6 +21,8 @@ import java.lang.reflect.Method;
 /**
  * Utility for API-safe registration of native memory cleanup actions via {@link java.lang.ref.Cleaner}.
  * Uses reflection to support Java 9+ and Android API 33+ while remaining compatible with older Android versions.
+ *
+ * @author Dirk Schnelle-Walka
  */
 final class WhisperCleaner {
 

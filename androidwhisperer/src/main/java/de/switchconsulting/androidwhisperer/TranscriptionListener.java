@@ -25,6 +25,8 @@ import java.util.Locale;
 
 /**
  * Listener interface for receiving incremental updates during audio transcription.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public interface TranscriptionListener {
 

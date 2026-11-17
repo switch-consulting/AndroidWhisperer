@@ -23,6 +23,8 @@ import java.util.Locale;
 
 /**
  * Configuration options for transcription behavior and pause analysis.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class AndroidWhispererOptions {
     /** Default segment pause threshold in milliseconds (300 ms). */

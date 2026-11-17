@@ -48,6 +48,8 @@ import java.util.concurrent.Executor;
  * Public Java facade for local whisper.cpp transcription.
  * Native calls on a single engine are serialized. Call expensive operations
  * from a worker thread, not Android's main thread.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class AndroidWhisperer implements Closeable {
 

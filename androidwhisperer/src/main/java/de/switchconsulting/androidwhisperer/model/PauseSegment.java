@@ -23,6 +23,8 @@ import org.json.JSONObject;
 
 /**
  * A detected silent interval between two speech boundaries.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class PauseSegment implements TranscriptionItem {
 

@@ -19,6 +19,9 @@ package de.switchconsulting.androidwhisperer.internal;
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public interface WhisperProgressCallback extends Callback {
     void onProgress(int progressPercent, Pointer userData);
 }

@@ -20,6 +20,8 @@ import androidx.annotation.Nullable;
 
 /**
  * Exception thrown when a requested Whisper model is not available or not supported.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public class WhisperModelNotAvailable extends RuntimeException {
 

@@ -37,6 +37,8 @@ import java.util.concurrent.Executor;
 /**
  * Utility class for managing local Whisper model files, downloading remote models,
  * and listing stored models.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class ModelManager {
 

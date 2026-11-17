@@ -29,6 +29,8 @@ import java.util.List;
 
 /**
  * Represents a single decoded speech segment from Whisper with timing, tokens, and pause intervals.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class SegmentResult implements TranscriptionItem {
 

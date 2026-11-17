@@ -27,7 +27,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-/** Audio conversion utilities for Whisper's 16 kHz mono float PCM input. */
+/**
+ * Audio conversion utilities for Whisper's 16 kHz mono float PCM input.
+ *
+ * @author Dirk Schnelle-Walka
+ */
 public final class AudioUtils {
 
     /** Target sample rate required by Whisper (16 kHz). */

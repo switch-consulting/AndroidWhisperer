@@ -18,6 +18,8 @@ package de.switchconsulting.androidwhisperer;
 
 /**
  * Mode specifying how pauses and silent intervals are analyzed during transcription.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public enum PauseMode {
     /** No pause analysis. */

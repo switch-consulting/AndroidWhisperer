@@ -20,6 +20,8 @@ import androidx.annotation.Nullable;
 
 /**
  * Exception thrown when an error occurs during audio transcription.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public class TranscriptionException extends RuntimeException {
 

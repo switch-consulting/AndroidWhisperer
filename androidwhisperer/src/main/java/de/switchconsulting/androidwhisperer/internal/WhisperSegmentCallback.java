@@ -19,6 +19,9 @@ package de.switchconsulting.androidwhisperer.internal;
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public interface WhisperSegmentCallback extends Callback {
     void onNewSegment(int segmentIndex, String text, long t0Ms, long t1Ms, Pointer userData);
 }

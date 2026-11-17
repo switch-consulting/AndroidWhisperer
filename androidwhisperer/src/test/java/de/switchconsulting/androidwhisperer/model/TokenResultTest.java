@@ -22,6 +22,9 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class TokenResultTest {
 
     @Test

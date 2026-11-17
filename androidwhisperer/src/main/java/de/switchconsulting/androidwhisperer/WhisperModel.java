@@ -33,6 +33,8 @@ import java.util.Locale;
  * Represents a Whisper model configuration.
  * Can be used with predefined standard models (e.g. {@link #TINY}, {@link #BASE})
  * or instantiated for custom user models.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public class WhisperModel {
 

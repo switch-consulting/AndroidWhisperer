@@ -25,6 +25,8 @@ import com.sun.jna.Pointer;
  *
  * The bridge owns the native whisper_full_params structure and calls
  * whisper_full_default_params() and whisper_full() internally.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public interface WhisperBridge extends Library {
 

@@ -18,5 +18,9 @@ package de.switchconsulting.androidwhisperer.internal;
 
 import com.sun.jna.PointerType;
 
-/** Opaque native context. */
+/**
+ * Opaque native context.
+ *
+ * @author Dirk Schnelle-Walka
+ */
 public class WhisperContext extends PointerType {}

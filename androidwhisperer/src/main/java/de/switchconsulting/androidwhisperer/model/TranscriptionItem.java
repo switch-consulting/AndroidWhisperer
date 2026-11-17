@@ -23,6 +23,8 @@ import org.json.JSONObject;
 
 /**
  * Common interface for chronological transcription timeline items (segments, tokens, and pauses).
+ *
+ * @author Dirk Schnelle-Walka
  */
 public interface TranscriptionItem {
 

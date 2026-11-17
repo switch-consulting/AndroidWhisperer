@@ -34,6 +34,8 @@ import java.util.Locale;
  * optional target translated language, and a chronological list of {@link TranscriptionItem}s (speech segments and pause intervals).
  * <p>
  * Implements {@link TranscriptionItem} to represent the overall time range spanned by the contained items.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class TranscriptionResult implements TranscriptionItem {
 

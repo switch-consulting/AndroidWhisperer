@@ -26,6 +26,8 @@ import com.sun.jna.Pointer;
  * ABI NOTE:
  * The native build and this mapping must use matching whisper.h versions.
  * C structs passed or returned by value require exact JNA Structure layouts.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public interface WhisperLibrary extends Library {
 

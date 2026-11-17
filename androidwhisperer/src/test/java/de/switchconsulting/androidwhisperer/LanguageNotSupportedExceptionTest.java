@@ -24,6 +24,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class LanguageNotSupportedExceptionTest {
 
     @Test

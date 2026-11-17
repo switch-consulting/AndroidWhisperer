@@ -22,6 +22,8 @@ import java.io.File;
 
 /**
  * Callback interface for asynchronous model download and extraction operations.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public interface ModelDownloadListener {
 

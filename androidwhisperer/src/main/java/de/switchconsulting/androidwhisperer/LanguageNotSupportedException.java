@@ -22,6 +22,8 @@ import java.util.Locale;
 
 /**
  * Exception thrown when a requested language or locale is not supported by the current Whisper model.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public class LanguageNotSupportedException extends TranscriptionException {
 

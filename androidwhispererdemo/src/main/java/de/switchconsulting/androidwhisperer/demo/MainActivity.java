@@ -47,6 +47,9 @@ import de.switchconsulting.androidwhisperer.model.TokenResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionItem;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
 

@@ -38,6 +38,9 @@ import de.switchconsulting.androidwhisperer.WhisperModelNotAvailable;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class TranscriptionManager {
     private static final String TAG = "TranscriptionManager";
 

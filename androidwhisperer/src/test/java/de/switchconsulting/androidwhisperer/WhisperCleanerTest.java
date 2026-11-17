@@ -20,6 +20,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class WhisperCleanerTest {
 
     @Test

@@ -21,6 +21,9 @@ import java.util.Locale;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public interface TranscriptionCallback {
     void onNewSegment(SegmentResult segment, String accumulatedTranscript);
     void onProgress(int progressPercent);

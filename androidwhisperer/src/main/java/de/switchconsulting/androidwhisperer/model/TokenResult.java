@@ -24,6 +24,8 @@ import org.json.JSONObject;
 
 /**
  * Represents an individual decoded speech token with text and timing.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class TokenResult implements TranscriptionItem {
 

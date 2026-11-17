@@ -21,6 +21,8 @@ import de.switchconsulting.androidwhisperer.internal.WhisperBridge;
 
 /**
  * Reusable cleanup action state for native whisper contexts via {@link java.lang.ref.Cleaner}.
+ *
+ * @author Dirk Schnelle-Walka
  */
 final class WhisperCleanerState implements Runnable {
     private final WhisperBridge nativeApi;

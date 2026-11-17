@@ -36,6 +36,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class ModelManagerTest {
 
     @Rule

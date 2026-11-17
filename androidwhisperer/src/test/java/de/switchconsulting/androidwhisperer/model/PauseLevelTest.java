@@ -20,6 +20,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author Dirk Schnelle-Walka
+ */
 public class PauseLevelTest {
 
     @Test

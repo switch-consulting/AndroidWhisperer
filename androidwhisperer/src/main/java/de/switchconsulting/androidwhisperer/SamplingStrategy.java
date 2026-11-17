@@ -18,6 +18,8 @@ package de.switchconsulting.androidwhisperer;
 
 /**
  * Sampling strategy for Whisper transcription.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public enum SamplingStrategy {
     /** Greedy decoding (fastest, default). */

@@ -25,6 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Internal utility providing shared background executors across AndroidWhisperer.
+ *
+ * @author Dirk Schnelle-Walka
  */
 public final class WhisperExecutors {
 
