@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0]
+## [0.2.0] - Decoding Options, Audio Translation & Unified Timeline
 
 ### Added
+- Version **0.2.0** release of **AndroidWhisperer** (`de.switch-consulting:androidwhisperer:0.2.0`), introducing audio translation, customizable decoding options, and a unified chronological timeline API.
 - Added `SamplingStrategy` enum (`GREEDY`, `BEAM_SEARCH`) to configure Whisper decoding strategy.
 - Added support for CPU thread count (`withThreads(int)`), sampling strategy (`withStrategy(SamplingStrategy)`), and translation (`withTranslate(boolean)`) in `AndroidWhispererOptions` and native C++ bridge.
 - Added `translatedLanguage` field (`Locale`) to `TranscriptionResult` to report the target language when translation is enabled.
