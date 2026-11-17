@@ -30,7 +30,10 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Complete transcription result containing full text, detected language, and chronological items (segments and pauses).
+ * Complete transcription result containing full transcribed text, detected language ({@link Locale}),
+ * optional target translated language, and a chronological list of {@link TranscriptionItem}s (speech segments and pause intervals).
+ * <p>
+ * Implements {@link TranscriptionItem} to represent the overall time range spanned by the contained items.
  */
 public final class TranscriptionResult implements TranscriptionItem {
 
@@ -48,7 +51,7 @@ public final class TranscriptionResult implements TranscriptionItem {
      * @param text full transcribed text
      * @param language detected language ({@link Locale})
      * @param translatedLanguage target language if translated ({@link Locale}), or null if not translated
-     * @param items chronological list of transcription items (segments and pauses)
+     * @param items chronological list of transcription items (speech segments and pause intervals)
      */
     public TranscriptionResult(
             @Nullable String text,
@@ -79,68 +82,13 @@ public final class TranscriptionResult implements TranscriptionItem {
      *
      * @param text full transcribed text
      * @param language detected language ({@link Locale})
-     * @param items chronological list of transcription items (segments and pauses)
+     * @param items chronological list of transcription items (speech segments and pause intervals)
      */
     public TranscriptionResult(
             @Nullable String text,
             @Nullable Locale language,
             @Nullable List<? extends TranscriptionItem> items) {
         this(text, language, null, items);
-    }
-
-    /**
-     * Constructs a transcription result with full text, language, translated language, segments, and pauses.
-     *
-     * @param text full transcribed text
-     * @param language detected language ({@link Locale})
-     * @param translatedLanguage target language if translated ({@link Locale}), or null if not translated
-     * @param segments list of decoded speech segments ({@link SegmentResult})
-     * @param pauses list of detected pause intervals ({@link PauseSegment})
-     */
-    public TranscriptionResult(
-            @Nullable String text,
-            @Nullable Locale language,
-            @Nullable Locale translatedLanguage,
-            @Nullable List<SegmentResult> segments,
-            @Nullable List<PauseSegment> pauses) {
-        this.text = text == null ? "" : text;
-        this.language = language;
-        this.translatedLanguage = translatedLanguage;
-        List<TranscriptionItem> combined = new ArrayList<>();
-        if (segments != null) {
-            combined.addAll(segments);
-        }
-        if (pauses != null) {
-            combined.addAll(pauses);
-        }
-        combined.sort(Comparator.comparingLong(TranscriptionItem::getStartMs));
-        this.items = Collections.unmodifiableList(combined);
-
-        if (!this.items.isEmpty()) {
-            this.startMs = this.items.get(0).getStartMs();
-            this.endMs = this.items.get(this.items.size() - 1).getEndMs();
-            this.durationMs = Math.max(0, this.endMs - this.startMs);
-        } else {
-            this.startMs = 0;
-            this.endMs = 0;
-            this.durationMs = 0;
-        }
-    }
-
-    /**
-     * Constructs a transcription result with full text, language, segments, and pauses (legacy constructor).
-     *
-     * @param text full transcribed text
-     * @param language detected language ({@link Locale})
-     * @param segments list of decoded speech segments ({@link SegmentResult})
-     * @param pauses list of detected pause intervals ({@link PauseSegment})
-     */
-    public TranscriptionResult(
-            @Nullable String text,
-            @Nullable Locale language,
-            @Nullable List<SegmentResult> segments,
-            @Nullable List<PauseSegment> pauses) {
-        this(text, language, null, segments, pauses);
     }
 
     /**
@@ -167,17 +115,32 @@ public final class TranscriptionResult implements TranscriptionItem {
     @Nullable
     public Locale getTranslatedLanguage() { return translatedLanguage; }
 
+    /**
+     * Returns the start timestamp in milliseconds of the first item in the result, or 0 if empty.
+     *
+     * @return start timestamp in milliseconds
+     */
     @Override
     public long getStartMs() { return startMs; }
 
+    /**
+     * Returns the end timestamp in milliseconds of the last item in the result, or 0 if empty.
+     *
+     * @return end timestamp in milliseconds
+     */
     @Override
     public long getEndMs() { return endMs; }
 
+    /**
+     * Returns the total duration in milliseconds spanned by the result items.
+     *
+     * @return duration in milliseconds
+     */
     @Override
     public long getDurationMs() { return durationMs; }
 
     /**
-     * Returns the chronological list of transcription items (segments and pauses).
+     * Returns the chronological list of transcription items (speech segments and pause intervals).
      *
      * @return unmodifiable list of transcription items
      */
@@ -185,9 +148,9 @@ public final class TranscriptionResult implements TranscriptionItem {
     public List<TranscriptionItem> getItems() { return items; }
 
     /**
-     * Returns the list of speech segments.
+     * Returns the list of speech segments extracted from the chronological items.
      *
-     * @return list of segment results
+     * @return unmodifiable list of segment results
      */
     @NonNull
     public List<SegmentResult> getSegments() {
@@ -198,22 +161,6 @@ public final class TranscriptionResult implements TranscriptionItem {
             }
         }
         return Collections.unmodifiableList(segments);
-    }
-
-    /**
-     * Returns the list of all detected pause intervals (segment-level and/or token-level).
-     *
-     * @return list of pause segments
-     */
-    @NonNull
-    public List<PauseSegment> getAllPauses() {
-        List<PauseSegment> pauses = new ArrayList<>();
-        for (TranscriptionItem item : items) {
-            if (item instanceof PauseSegment) {
-                pauses.add((PauseSegment) item);
-            }
-        }
-        return Collections.unmodifiableList(pauses);
     }
 
     /**

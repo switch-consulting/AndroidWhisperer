@@ -246,8 +246,8 @@ result.segments.forEach { segment ->
     println("[${segment.startMs} ms - ${segment.endMs} ms]: ${segment.text}")
 }
 
-// Inspect silence/pause intervals
-result.pauses.forEach { pause ->
+// Inspect silence/pause intervals from items
+result.items.filterIsInstance<PauseSegment>().forEach { pause ->
     println("Pause of ${pause.durationMs} ms at ${pause.startMs} ms")
 }
 
