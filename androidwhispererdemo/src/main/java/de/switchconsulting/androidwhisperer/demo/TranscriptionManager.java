@@ -24,6 +24,8 @@ import androidx.annotation.NonNull;
 import org.json.JSONException;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
@@ -45,6 +47,16 @@ public class TranscriptionManager {
     private static final String TAG = "TranscriptionManager";
 
     @SuppressWarnings("unused")
+    public static void transcribeAudio(final Context context, final InputStream audioStream, final TranscriptionCallback callback) {
+        transcribeAudio(context, WhisperModel.TINY, null, audioStream, callback);
+    }
+
+    @SuppressWarnings("unused")
+    public static void transcribeAudio(final Context context, final WhisperModel model, final InputStream audioStream, final TranscriptionCallback callback) {
+        transcribeAudio(context, model, null, audioStream, callback);
+    }
+
+    @SuppressWarnings("unused")
     public static void transcribeAudio(final Context context, final File pcmFile, final TranscriptionCallback callback) {
         transcribeAudio(context, WhisperModel.TINY, null, pcmFile, callback);
     }
@@ -55,6 +67,16 @@ public class TranscriptionManager {
     }
 
     public static void transcribeAudio(final Context context, final WhisperModel model, final Locale locale, final File pcmFile, final TranscriptionCallback callback) {
+        try {
+            transcribeAudio(context, model, locale, new FileInputStream(pcmFile), callback);
+        } catch (Exception e) {
+            if (callback != null) {
+                callback.onError(e);
+            }
+        }
+    }
+
+    public static void transcribeAudio(final Context context, final WhisperModel model, final Locale locale, final InputStream audioStream, final TranscriptionCallback callback) {
         WhisperModel selectedModel = (model != null) ? model : WhisperModel.TINY;
         if (!ModelManager.isModelAvailable(context, selectedModel)) {
             if (callback != null) {
@@ -105,13 +127,12 @@ public class TranscriptionManager {
                 }
                 whisperer.init(context, selectedModel);
 
-                float[] samples = AudioRecorder.convertPcmToFloat(pcmFile);
                 AndroidWhispererOptions options = AndroidWhispererOptions.defaults()
                         .withPauseMode(PauseMode.BOTH)
                         .withSegmentPauseThresholdMs(300)
                         .withTokenPauseThresholdMs(100)
                         .withLocale(locale);
-                return whisperer.transcribe(samples, options);
+                return whisperer.transcribe(audioStream, options);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

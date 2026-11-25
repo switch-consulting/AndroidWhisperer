@@ -129,7 +129,7 @@ public class AudioUtilsTest {
     @Test
     public void fromPcm16_nullInput_throwsException() {
         try {
-            AudioUtils.fromPcm16(null, 16000, 1);
+            AudioUtils.fromPcm16((byte[]) null, 16000, 1);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("pcm == null", e.getMessage());

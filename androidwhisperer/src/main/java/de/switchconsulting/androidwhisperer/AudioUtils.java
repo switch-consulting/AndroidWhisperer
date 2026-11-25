@@ -119,6 +119,44 @@ public final class AudioUtils {
         return fromPcm16(pcm, sampleRate, channels);
     }
 
+    /**
+     * Reads signed PCM16 little-endian audio from an {@link InputStream} and converts it to 16 kHz mono.
+     * Default assumption: 16 kHz sample rate, 1 channel (mono).
+     *
+     * @param stream the InputStream containing PCM16 little-endian audio bytes
+     * @return mono float PCM samples at 16 kHz
+     * @throws IOException if reading from the stream fails
+     */
+    @NonNull
+    public static float[] fromPcm16(@NonNull InputStream stream) throws IOException {
+        return fromPcm16(stream, TARGET_SAMPLE_RATE, 1);
+    }
+
+    /**
+     * Reads signed PCM16 little-endian audio from an {@link InputStream} and converts it to 16 kHz mono.
+     *
+     * @param stream the InputStream containing PCM16 little-endian audio bytes
+     * @param sourceRate source sample rate in Hz
+     * @param channels number of interleaved channels
+     * @return mono float PCM samples at 16 kHz
+     * @throws IOException if reading from the stream fails
+     */
+    @NonNull
+    @SuppressWarnings("ConstantConditions")
+    public static float[] fromPcm16(
+            @NonNull InputStream stream, int sourceRate, int channels) throws IOException {
+        if (stream == null) {
+            throw new IllegalArgumentException("stream == null");
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int n;
+        while ((n = stream.read(buffer)) != -1) {
+            out.write(buffer, 0, n);
+        }
+        return fromPcm16(out.toByteArray(), sourceRate, channels);
+    }
+
     private static boolean notEqualsAscii(byte[] b, int offset, String text) {
         if (offset + text.length() > b.length) return true;
         for (int i = 0; i < text.length(); i++) {
@@ -136,8 +174,12 @@ public final class AudioUtils {
      * @return mono float PCM samples at 16 kHz
      */
     @NonNull
+    @SuppressWarnings("ConstantConditions")
     public static float[] fromPcm16(
             @NonNull byte[] pcm, int sourceRate, int channels) {
+        if (pcm == null) {
+            throw new IllegalArgumentException("pcm == null");
+        }
         if (sourceRate <= 0 || channels <= 0) {
             throw new IllegalArgumentException(
                     "Sample rate and channel count must be positive");
@@ -174,8 +216,12 @@ public final class AudioUtils {
      * @return mono float PCM samples at 16 kHz
      */
     @NonNull
+    @SuppressWarnings("ConstantConditions")
     public static float[] fromFloatPcm(
             @NonNull float[] interleaved, int sourceRate, int channels) {
+        if (interleaved == null) {
+            throw new IllegalArgumentException("interleaved == null");
+        }
         if (sourceRate <= 0 || channels <= 0
                 || interleaved.length % channels != 0) {
             throw new IllegalArgumentException("Invalid audio format");
@@ -210,8 +256,12 @@ public final class AudioUtils {
      * @return resampled audio float array
      */
     @NonNull
+    @SuppressWarnings("ConstantConditions")
     public static float[] resample(
             @NonNull float[] input, int sourceRate, int targetRate) {
+        if (input == null) {
+            throw new IllegalArgumentException("input == null");
+        }
         if (sourceRate <= 0 || targetRate <= 0) {
             throw new IllegalArgumentException("Invalid sample rate");
         }

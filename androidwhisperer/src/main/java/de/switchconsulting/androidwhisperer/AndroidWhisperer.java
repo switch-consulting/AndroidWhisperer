@@ -20,6 +20,7 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 
 import com.sun.jna.Pointer;
 
@@ -36,6 +37,7 @@ import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -124,6 +126,8 @@ public final class AndroidWhisperer implements Closeable {
      * @throws IOException if obtaining or downloading the model fails
      * @throws WhisperModelNotAvailable if the model is not available
      */
+    @WorkerThread
+    @SuppressWarnings("unused")
     public synchronized void init(@NonNull Context context) throws IOException {
         init(context, WhisperModel.TINY);
     }
@@ -137,6 +141,8 @@ public final class AndroidWhisperer implements Closeable {
      * @throws IOException if obtaining or downloading the model fails
      * @throws WhisperModelNotAvailable if the model is not available or not supported
      */
+    @WorkerThread
+    @SuppressWarnings("unused")
     public synchronized void init(@NonNull Context context, @Nullable WhisperModel model) throws IOException {
         ensureOpen();
         WhisperModel resolvedModel = (model == null) ? WhisperModel.TINY : model;
@@ -246,6 +252,44 @@ public final class AndroidWhisperer implements Closeable {
     }
 
     /**
+     * Transcribes audio read from an {@link InputStream} containing 16-bit signed PCM audio bytes
+     * (16,000 Hz, single-channel / mono, little-endian) using default options.
+     *
+     * @param stream the InputStream containing PCM16 audio bytes
+     * @return transcription result
+     */
+    @NonNull
+    public synchronized TranscriptionResult transcribe(@NonNull InputStream stream) {
+        return transcribe(stream, AndroidWhispererOptions.defaults());
+    }
+
+    /**
+     * Transcribes audio read from an {@link InputStream} containing 16-bit signed PCM audio bytes
+     * (16,000 Hz, single-channel / mono, little-endian) with the specified options.
+     *
+     * @param stream the InputStream containing PCM16 audio bytes
+     * @param options transcription options
+     * @return transcription result
+     */
+    @NonNull
+    public synchronized TranscriptionResult transcribe(
+            @NonNull InputStream stream, @Nullable AndroidWhispererOptions options) {
+        float[] samples;
+        try {
+            samples = AudioUtils.fromPcm16(stream);
+        } catch (TranscriptionException e) {
+            notifyListenersError(e);
+            throw e;
+        } catch (Exception e) {
+            TranscriptionException te = new TranscriptionException(
+                    e.getMessage() != null ? e.getMessage() : "Failed to read audio stream", e);
+            notifyListenersError(te);
+            throw te;
+        }
+        return transcribe(samples, options);
+    }
+
+    /**
      * Asynchronously transcribes audio with the default pause-analysis options.
      *
      * @param samples mono float PCM audio samples at 16 kHz
@@ -295,6 +339,62 @@ public final class AndroidWhisperer implements Closeable {
             @NonNull float[] samples, @Nullable AndroidWhispererOptions options, @Nullable Executor executor) {
         Executor exec = executor != null ? executor : WhisperExecutors.getDefaultExecutor();
         return CompletableFuture.supplyAsync(() -> transcribe(samples, options), exec);
+    }
+
+    /**
+     * Asynchronously transcribes audio read from an {@link InputStream} containing 16-bit signed PCM audio bytes
+     * (16,000 Hz, single-channel / mono, little-endian) using default options.
+     *
+     * @param stream the InputStream containing PCM16 audio bytes
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @NonNull
+    public CompletableFuture<TranscriptionResult> transcribeAsync(@NonNull InputStream stream) {
+        return transcribeAsync(stream, null, null);
+    }
+
+    /**
+     * Asynchronously transcribes audio read from an {@link InputStream} containing 16-bit signed PCM audio bytes
+     * (16,000 Hz, single-channel / mono, little-endian) using default options on the specified executor.
+     *
+     * @param stream the InputStream containing PCM16 audio bytes
+     * @param executor optional custom executor to run the asynchronous task
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @NonNull
+    public CompletableFuture<TranscriptionResult> transcribeAsync(
+            @NonNull InputStream stream, @Nullable Executor executor) {
+        return transcribeAsync(stream, AndroidWhispererOptions.defaults(), executor);
+    }
+
+    /**
+     * Asynchronously transcribes audio read from an {@link InputStream} containing 16-bit signed PCM audio bytes
+     * (16,000 Hz, single-channel / mono, little-endian) with the specified options.
+     *
+     * @param stream the InputStream containing PCM16 audio bytes
+     * @param options transcription options
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @NonNull
+    public CompletableFuture<TranscriptionResult> transcribeAsync(
+            @NonNull InputStream stream, @Nullable AndroidWhispererOptions options) {
+        return transcribeAsync(stream, options, null);
+    }
+
+    /**
+     * Asynchronously transcribes audio read from an {@link InputStream} containing 16-bit signed PCM audio bytes
+     * (16,000 Hz, single-channel / mono, little-endian) with the specified options.
+     *
+     * @param stream the InputStream containing PCM16 audio bytes
+     * @param options transcription options
+     * @param executor optional custom executor to run the asynchronous task
+     * @return a CompletableFuture resolving to the transcription result
+     */
+    @NonNull
+    public CompletableFuture<TranscriptionResult> transcribeAsync(
+            @NonNull InputStream stream, @Nullable AndroidWhispererOptions options, @Nullable Executor executor) {
+        Executor exec = executor != null ? executor : WhisperExecutors.getDefaultExecutor();
+        return CompletableFuture.supplyAsync(() -> transcribe(stream, options), exec);
     }
 
     private boolean isLocaleSupportedByModel(Locale locale) {
@@ -579,6 +679,7 @@ public final class AndroidWhisperer implements Closeable {
 
     /** Releases the native context and makes this engine unusable. */
     @Override
+    @SuppressWarnings("unused")
     public synchronized void close() {
         if (closed) return;
         closed = true;
@@ -593,6 +694,7 @@ public final class AndroidWhisperer implements Closeable {
     }
 
     /** Alias for close(), for callers that prefer explicit lifecycle naming. */
+    @SuppressWarnings("unused")
     public void release() {
         close();
     }

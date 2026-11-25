@@ -34,6 +34,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +42,7 @@ import java.util.Locale;
 import de.switchconsulting.androidwhisperer.ModelDownloadListener;
 import de.switchconsulting.androidwhisperer.ModelManager;
 import de.switchconsulting.androidwhisperer.WhisperModel;
+import de.switchconsulting.androidwhisperer.audio.AudioRecorder;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.TokenResult;
@@ -318,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startRecording() {
         try {
-            audioRecorder.startRecording(getCacheDir());
+            audioRecorder.startRecording();
             isRecording = true;
             spinnerModel.setEnabled(false);
             spinnerLanguage.setEnabled(false);
@@ -334,13 +336,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopRecordingAndTranscribe() {
-        final File pcmFile = audioRecorder.stopRecording();
+        audioRecorder.stopRecording();
         isRecording = false;
         btnRecord.setText(R.string.start_recording);
         tvStatus.setText(R.string.status_transcribing);
         tvResults.setText(getString(R.string.transcribing_audio_with_model, selectedModel.getVariant()));
 
-        if (pcmFile == null || !pcmFile.exists() || pcmFile.length() == 0) {
+        InputStream pcmStream;
+        try {
+            pcmStream = audioRecorder.getPcmInputStream();
+            if (pcmStream.available() == 0) {
+                spinnerModel.setEnabled(true);
+                spinnerLanguage.setEnabled(true);
+                tvStatus.setText(R.string.status_ready);
+                tvResults.setText(R.string.error_no_audio_recorded);
+                return;
+            }
+        } catch (Exception e) {
             spinnerModel.setEnabled(true);
             spinnerLanguage.setEnabled(true);
             tvStatus.setText(R.string.status_ready);
@@ -348,7 +360,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        TranscriptionManager.transcribeAudio(this, selectedModel, selectedLocale, pcmFile, new TranscriptionCallback() {
+        TranscriptionManager.transcribeAudio(this, selectedModel, selectedLocale, pcmStream, new TranscriptionCallback() {
             @Override
             public void onNewSegment(final SegmentResult segment, final String accumulatedTranscript) {
                 runOnUiThread(() -> tvResults.setText(getString(R.string.live_transcription_header, selectedModel.getVariant(), accumulatedTranscript)));
@@ -383,7 +395,7 @@ public class MainActivity extends AppCompatActivity {
 
                     sb.append("--- Chronological Timeline (Items) ---\n");
                     List<TranscriptionItem> items = result.getItems();
-                    if (items != null && !items.isEmpty()) {
+                    if (!items.isEmpty()) {
                         for (TranscriptionItem item : items) {
                             if (item instanceof SegmentResult) {
                                 SegmentResult seg = (SegmentResult) item;

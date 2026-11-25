@@ -699,6 +699,103 @@ public class AndroidWhispererTest {
     }
 
     @Test
+    public void transcribeAsync_stream_success() throws Exception {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    switch (name) {
+                        case "whisper_init_from_file":
+                            return new Pointer(999L);
+                        case "whisper_bridge_transcribe":
+                            return 0;
+                        case "whisper_full_n_segments":
+                            return 1;
+                        case "whisper_full_get_segment_t0":
+                            return 0L;
+                        case "whisper_full_get_segment_t1":
+                            return 100L;
+                        case "whisper_full_get_segment_text":
+                            return "Async stream hello";
+                        case "whisper_bridge_detect_language":
+                            return 0;
+                        case "whisper_lang_str":
+                            return "en";
+                        case "whisper_is_multilingual":
+                            return 1;
+                        case "whisper_free":
+                            return null;
+                        default:
+                            if (method.getReturnType() == int.class) return 0;
+                            if (method.getReturnType() == long.class) return 0L;
+                            return null;
+                    }
+                });
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            byte[] pcmData = new byte[320]; // 160 PCM16 samples
+            java.io.ByteArrayInputStream in = new java.io.ByteArrayInputStream(pcmData);
+            TranscriptionResult result = w.transcribeAsync(in).get();
+            assertNotNull(result);
+            assertEquals("Async stream hello", result.getText());
+        }
+    }
+
+    @Test
+    public void transcribeAsync_stream_withCustomExecutor() throws Exception {
+        WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
+                WhisperBridge.class.getClassLoader(),
+                new Class<?>[]{WhisperBridge.class},
+                (proxy, method, args) -> {
+                    String name = method.getName();
+                    switch (name) {
+                        case "whisper_init_from_file":
+                            return new Pointer(999L);
+                        case "whisper_bridge_transcribe":
+                            return 0;
+                        case "whisper_full_n_segments":
+                            return 1;
+                        case "whisper_full_get_segment_t0":
+                            return 0L;
+                        case "whisper_full_get_segment_t1":
+                            return 100L;
+                        case "whisper_full_get_segment_text":
+                            return "Custom Executor stream hello";
+                        case "whisper_bridge_detect_language":
+                            return 0;
+                        case "whisper_lang_str":
+                            return "en";
+                        case "whisper_is_multilingual":
+                            return 1;
+                        case "whisper_free":
+                            return null;
+                        default:
+                            if (method.getReturnType() == int.class) return 0;
+                            if (method.getReturnType() == long.class) return 0L;
+                            return null;
+                    }
+                });
+
+        try (AndroidWhisperer w = new AndroidWhisperer(bridge)) {
+            w.initModelFromFile(new File("dummy.bin"));
+            java.util.concurrent.atomic.AtomicBoolean executedOnCustom = new java.util.concurrent.atomic.AtomicBoolean(false);
+            java.util.concurrent.Executor customExecutor = command -> {
+                executedOnCustom.set(true);
+                command.run();
+            };
+
+            byte[] pcmData = new byte[320];
+            java.io.ByteArrayInputStream in = new java.io.ByteArrayInputStream(pcmData);
+            TranscriptionResult result = w.transcribeAsync(in, customExecutor).get();
+            assertNotNull(result);
+            assertEquals("Custom Executor stream hello", result.getText());
+            assertTrue(executedOnCustom.get());
+        }
+    }
+
+    @Test
     public void lifecycle_closedEngine_throws() {
         WhisperBridge bridge = (WhisperBridge) Proxy.newProxyInstance(
                 WhisperBridge.class.getClassLoader(),
