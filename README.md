@@ -133,7 +133,7 @@ ModelManager.ensureModelAsync(context, WhisperModel.BASE, new ModelDownloadListe
 #### 2. Prepare Audio & Transcribe
 
 ```java
-import de.switchconsulting.androidwhisperer.AudioUtils;
+import de.switchconsulting.androidwhisperer.audio.AudioUtils;
 import de.switchconsulting.androidwhisperer.model.TranscriptionResult;
 import de.switchconsulting.androidwhisperer.model.SegmentResult;
 import de.switchconsulting.androidwhisperer.model.PauseSegment;
@@ -215,7 +215,7 @@ ModelManager.ensureModelAsync(context, WhisperModel.BASE, object : ModelDownload
 
 ```kotlin
 import de.switchconsulting.androidwhisperer.AndroidWhispererOptions
-import de.switchconsulting.androidwhisperer.AudioUtils
+import de.switchconsulting.androidwhisperer.audio.AudioUtils
 import de.switchconsulting.androidwhisperer.PauseMode
 import java.io.File
 import java.util.Locale

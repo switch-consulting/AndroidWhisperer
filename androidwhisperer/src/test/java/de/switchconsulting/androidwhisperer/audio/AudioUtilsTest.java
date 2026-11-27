@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.switchconsulting.androidwhisperer;
+package de.switchconsulting.androidwhisperer.audio;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -90,56 +90,26 @@ public class AudioUtilsTest {
     }
 
     @Test
-    public void fromFloatPcm_nullInput_throwsException() {
-        try {
-            AudioUtils.fromFloatPcm(null, 16000, 1);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            assertEquals("interleaved == null", e.getMessage());
-        }
-    }
-
-    @Test
-    public void fromFloatPcm_invalidFormat_throwsException() {
-        try {
-            AudioUtils.fromFloatPcm(new float[]{0.1f, 0.2f}, 16000, 3);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Invalid audio format", e.getMessage());
-        }
-    }
-
-    @Test
-    public void fromFloatPcm_nonFiniteValue_throwsException() {
-        try {
-            AudioUtils.fromFloatPcm(new float[]{Float.NaN}, 16000, 1);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Audio contains NaN or infinity", e.getMessage());
-        }
-    }
-
-    @Test
-    public void fromFloatPcm_validInput() {
-        float[] input = new float[]{0.5f, -0.5f, 1.5f, -1.5f}; // 1.5 and -1.5 will be clamped
-        float[] res = AudioUtils.fromFloatPcm(input, 16000, 2);
-        assertNotNull(res);
-    }
-
-    @Test
     public void fromPcm16_nullInput_throwsException() {
         try {
-            AudioUtils.fromPcm16((byte[]) null, 16000, 1);
+            AudioUtils.fromPcm16(null, 0, 4, new float[2], 0, 16000, 1);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("pcm == null", e.getMessage());
+        }
+
+        try {
+            AudioUtils.fromPcm16(new byte[4], 0, 4, null, 0, 16000, 1);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("out == null", e.getMessage());
         }
     }
 
     @Test
     public void fromPcm16_invalidSampleRateOrChannels_throwsException() {
         try {
-            AudioUtils.fromPcm16(new byte[4], 0, 1);
+            AudioUtils.fromPcm16(new byte[4], 0, 4, new float[2], 0, 0, 1);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("Sample rate and channel count must be positive", e.getMessage());
@@ -147,9 +117,26 @@ public class AudioUtilsTest {
     }
 
     @Test
+    public void fromPcm16_invalidBounds_throwsException() {
+        try {
+            AudioUtils.fromPcm16(new byte[4], -1, 4, new float[2], 0, 16000, 1);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid offset or length bounds", e.getMessage());
+        }
+
+        try {
+            AudioUtils.fromPcm16(new byte[4], 0, 6, new float[2], 0, 16000, 1);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid offset or length bounds", e.getMessage());
+        }
+    }
+
+    @Test
     public void fromPcm16_incompleteFrame_throwsException() {
         try {
-            AudioUtils.fromPcm16(new byte[3], 16000, 1);
+            AudioUtils.fromPcm16(new byte[3], 0, 3, new float[2], 0, 16000, 1);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("PCM buffer contains an incomplete frame", e.getMessage());
@@ -157,10 +144,13 @@ public class AudioUtilsTest {
     }
 
     @Test
-    public void fromPcm16_validBytes() {
+    public void fromPcm16_validBytes_returnsWrittenSampleCount() {
         byte[] pcm = new byte[]{0, 0, (byte) 0xff, 0x7f}; // two samples
-        float[] res = AudioUtils.fromPcm16(pcm, 16000, 1);
-        assertNotNull(res);
+        float[] out = new float[2];
+        int count = AudioUtils.fromPcm16(pcm, 0, pcm.length, out, 0);
+        assertEquals(2, count);
+        assertEquals(0.0f, out[0], 0.001f);
+        assertEquals(0.9999f, out[1], 0.001f);
     }
 
     @Test
@@ -181,6 +171,7 @@ public class AudioUtilsTest {
         File validFile = createValidWavFile(temporaryFolder);
         float[] samples = AudioUtils.readWav(validFile);
         assertNotNull(samples);
+        assertEquals(160, samples.length);
     }
 
     private File createValidWavFile(TemporaryFolder tempFolder) throws IOException {

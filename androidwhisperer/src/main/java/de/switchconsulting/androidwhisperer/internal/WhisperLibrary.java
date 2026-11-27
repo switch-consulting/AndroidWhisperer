@@ -31,7 +31,19 @@ import com.sun.jna.Pointer;
  */
 public interface WhisperLibrary extends Library {
 
-    WhisperLibrary INSTANCE = Native.load("whisper", WhisperLibrary.class);
+    WhisperLibrary INSTANCE = Holder.INSTANCE;
+
+    class Holder {
+        private static final WhisperLibrary INSTANCE = load();
+
+        private static WhisperLibrary load() {
+            try {
+                return Native.load("whisper", WhisperLibrary.class);
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+    }
 
     // Lifecycle and diagnostics.
     Pointer whisper_init_from_file(String modelPath);

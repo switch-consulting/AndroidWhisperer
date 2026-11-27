@@ -141,8 +141,8 @@ public class AndroidWhispererTest {
                         case "whisper_init_from_file":
                             return new Pointer(999L);
                         case "whisper_bridge_transcribe_with_callback":
-                            WhisperSegmentCallback segCb = (WhisperSegmentCallback) args[5];
-                            WhisperProgressCallback progCb = (WhisperProgressCallback) args[6];
+                            WhisperSegmentCallback segCb = (WhisperSegmentCallback) args[8];
+                            WhisperProgressCallback progCb = (WhisperProgressCallback) args[9];
                             if (segCb != null) {
                                 segCb.onNewSegment(0, "Incremental text", 0L, 500L, null);
                             }
@@ -640,6 +640,8 @@ public class AndroidWhispererTest {
                         case "whisper_free":
                             return null;
                         default:
+                            if (method.getReturnType() == int.class) return 0;
+                            if (method.getReturnType() == long.class) return 0L;
                             return null;
                     }
                 });
@@ -679,6 +681,8 @@ public class AndroidWhispererTest {
                         case "whisper_free":
                             return null;
                         default:
+                            if (method.getReturnType() == int.class) return 0;
+                            if (method.getReturnType() == long.class) return 0L;
                             return null;
                     }
                 });

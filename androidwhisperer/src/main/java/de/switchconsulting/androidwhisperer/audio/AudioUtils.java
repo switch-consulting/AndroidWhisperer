@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.switchconsulting.androidwhisperer;
+package de.switchconsulting.androidwhisperer.audio;
 
 import androidx.annotation.NonNull;
 
@@ -50,7 +50,20 @@ public final class AudioUtils {
      */
     @NonNull
     public static float[] readWav(@NonNull File file) throws IOException {
-        byte[] bytes;
+        byte[] bytes = readAllBytes(file);
+        WavHeader header = parseWavHeader(bytes);
+
+        int frameCount = header.dataSize / (header.channels * 2);
+        long targetLength = Math.round((double) frameCount * TARGET_SAMPLE_RATE / header.sampleRate);
+        float[] outSamples = new float[(int) targetLength];
+        int written = fromPcm16(bytes, header.dataOffset, header.dataSize, outSamples, 0, header.sampleRate, header.channels);
+        if (written < outSamples.length) {
+            return Arrays.copyOf(outSamples, written);
+        }
+        return outSamples;
+    }
+
+    private static byte[] readAllBytes(File file) throws IOException {
         try (InputStream in = new FileInputStream(file);
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
@@ -58,9 +71,11 @@ public final class AudioUtils {
             while ((n = in.read(buffer)) != -1) {
                 out.write(buffer, 0, n);
             }
-            bytes = out.toByteArray();
+            return out.toByteArray();
         }
+    }
 
+    private static WavHeader parseWavHeader(byte[] bytes) throws IOException {
         if (bytes.length < 44 ||
                 notEqualsAscii(bytes, 0, "RIFF") ||
                 notEqualsAscii(bytes, 8, "WAVE")) {
@@ -74,7 +89,6 @@ public final class AudioUtils {
         int format = -1, channels = -1, sampleRate = -1;
         int bitsPerSample = -1, dataOffset = -1, dataSize = -1;
 
-        // WAV chunks may occur in different orders and may include padding.
         while (offset + 8 <= bytes.length) {
             String id = new String(bytes, offset, 4,
                     java.nio.charset.StandardCharsets.US_ASCII);
@@ -113,86 +127,73 @@ public final class AudioUtils {
             throw new IOException("Incomplete PCM audio frame");
         }
 
-        byte[] pcm = Arrays.copyOfRange(
-                bytes, dataOffset, dataOffset + dataSize);
-
-        return fromPcm16(pcm, sampleRate, channels);
+        return new WavHeader(format, channels, sampleRate, bitsPerSample, dataOffset, dataSize);
     }
 
+    private record WavHeader(
+            int format,
+            int channels,
+            int sampleRate,
+            int bitsPerSample,
+            int dataOffset,
+            int dataSize) {}
+
     /**
-     * Reads signed PCM16 little-endian audio from an {@link InputStream} and converts it to 16 kHz mono.
+     * Converts a slice of interleaved signed PCM16 little-endian bytes to 16 kHz mono float PCM.
      * Default assumption: 16 kHz sample rate, 1 channel (mono).
      *
-     * @param stream the InputStream containing PCM16 little-endian audio bytes
-     * @return mono float PCM samples at 16 kHz
-     * @throws IOException if reading from the stream fails
+     * @param pcm interleaved PCM byte buffer
+     * @param offset byte offset in pcm array
+     * @param length number of PCM bytes to convert
+     * @param out destination float array
+     * @param outOffset starting index in out array
+     * @return number of float samples written to out
      */
-    @NonNull
-    public static float[] fromPcm16(@NonNull InputStream stream) throws IOException {
-        return fromPcm16(stream, TARGET_SAMPLE_RATE, 1);
+    public static int fromPcm16(
+            @NonNull byte[] pcm, int offset, int length,
+            @NonNull float[] out, int outOffset) {
+        return fromPcm16(pcm, offset, length, out, outOffset, TARGET_SAMPLE_RATE, 1);
     }
 
     /**
-     * Reads signed PCM16 little-endian audio from an {@link InputStream} and converts it to 16 kHz mono.
+     * Converts a slice of interleaved signed PCM16 little-endian bytes to 16 kHz mono float PCM.
      *
-     * @param stream the InputStream containing PCM16 little-endian audio bytes
+     * @param pcm interleaved PCM byte buffer
+     * @param offset byte offset in pcm array
+     * @param length number of PCM bytes to convert
+     * @param out destination float array
+     * @param outOffset starting index in out array
      * @param sourceRate source sample rate in Hz
      * @param channels number of interleaved channels
-     * @return mono float PCM samples at 16 kHz
-     * @throws IOException if reading from the stream fails
+     * @return number of float samples written to out
      */
-    @NonNull
     @SuppressWarnings("ConstantConditions")
-    public static float[] fromPcm16(
-            @NonNull InputStream stream, int sourceRate, int channels) throws IOException {
-        if (stream == null) {
-            throw new IllegalArgumentException("stream == null");
-        }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[8192];
-        int n;
-        while ((n = stream.read(buffer)) != -1) {
-            out.write(buffer, 0, n);
-        }
-        return fromPcm16(out.toByteArray(), sourceRate, channels);
-    }
-
-    private static boolean notEqualsAscii(byte[] b, int offset, String text) {
-        if (offset + text.length() > b.length) return true;
-        for (int i = 0; i < text.length(); i++) {
-            if (b[offset + i] != (byte) text.charAt(i)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Converts interleaved signed PCM16 little-endian bytes to 16 kHz mono.
-     *
-     * @param pcm interleaved PCM frames
-     * @param sourceRate source sample rate in Hz
-     * @param channels number of interleaved channels
-     * @return mono float PCM samples at 16 kHz
-     */
-    @NonNull
-    @SuppressWarnings("ConstantConditions")
-    public static float[] fromPcm16(
-            @NonNull byte[] pcm, int sourceRate, int channels) {
+    public static int fromPcm16(
+            @NonNull byte[] pcm, int offset, int length,
+            @NonNull float[] out, int outOffset,
+            int sourceRate, int channels) {
         if (pcm == null) {
             throw new IllegalArgumentException("pcm == null");
+        }
+        if (out == null) {
+            throw new IllegalArgumentException("out == null");
         }
         if (sourceRate <= 0 || channels <= 0) {
             throw new IllegalArgumentException(
                     "Sample rate and channel count must be positive");
         }
-        if (pcm.length % (channels * 2) != 0) {
+        if (offset < 0 || length < 0 || offset + length > pcm.length) {
+            throw new IllegalArgumentException("Invalid offset or length bounds");
+        }
+        if (length % (channels * 2) != 0) {
             throw new IllegalArgumentException(
                     "PCM buffer contains an incomplete frame");
         }
 
-        int frames = pcm.length / (channels * 2);
+        int frames = length / (channels * 2);
         float[] mono = new float[frames];
 
-        ByteBuffer input = ByteBuffer.wrap(pcm)
+        ByteBuffer input = ByteBuffer.wrap(pcm, offset, length)
                 .order(ByteOrder.LITTLE_ENDIAN);
 
         for (int i = 0; i < frames; i++) {
@@ -203,47 +204,20 @@ public final class AudioUtils {
             mono[i] = clamp(sum / channels);
         }
 
-        return resample(mono, sourceRate, TARGET_SAMPLE_RATE);
+        float[] resampled = resample(mono, sourceRate, TARGET_SAMPLE_RATE);
+        if (outOffset < 0 || outOffset + resampled.length > out.length) {
+            throw new IllegalArgumentException("Destination array out buffer is too small");
+        }
+        System.arraycopy(resampled, 0, out, outOffset, resampled.length);
+        return resampled.length;
     }
 
-    /**
-     * Converts interleaved float PCM in [-1, 1] to mono 16 kHz.
-     * Input must contain one float per channel per frame.
-     *
-     * @param interleaved interleaved float PCM samples
-     * @param sourceRate source sample rate in Hz
-     * @param channels number of interleaved channels
-     * @return mono float PCM samples at 16 kHz
-     */
-    @NonNull
-    @SuppressWarnings("ConstantConditions")
-    public static float[] fromFloatPcm(
-            @NonNull float[] interleaved, int sourceRate, int channels) {
-        if (interleaved == null) {
-            throw new IllegalArgumentException("interleaved == null");
+    private static boolean notEqualsAscii(byte[] b, int offset, String text) {
+        if (offset + text.length() > b.length) return true;
+        for (int i = 0; i < text.length(); i++) {
+            if (b[offset + i] != (byte) text.charAt(i)) return true;
         }
-        if (sourceRate <= 0 || channels <= 0
-                || interleaved.length % channels != 0) {
-            throw new IllegalArgumentException("Invalid audio format");
-        }
-
-        int frames = interleaved.length / channels;
-        float[] mono = new float[frames];
-
-        for (int i = 0; i < frames; i++) {
-            float sum = 0f;
-            for (int c = 0; c < channels; c++) {
-                float value = interleaved[i * channels + c];
-                if (!Float.isFinite(value)) {
-                    throw new IllegalArgumentException(
-                            "Audio contains NaN or infinity");
-                }
-                sum += clamp(value);
-            }
-            mono[i] = clamp(sum / channels);
-        }
-
-        return resample(mono, sourceRate, TARGET_SAMPLE_RATE);
+        return false;
     }
 
     /**

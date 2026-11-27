@@ -30,7 +30,19 @@ import com.sun.jna.Pointer;
  */
 public interface WhisperBridge extends Library {
 
-    WhisperBridge INSTANCE = Native.load("whisper", WhisperBridge.class);
+    WhisperBridge INSTANCE = Holder.INSTANCE;
+
+    class Holder {
+        private static final WhisperBridge INSTANCE = load();
+
+        private static WhisperBridge load() {
+            try {
+                return Native.load("whisper", WhisperBridge.class);
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+    }
 
     Pointer whisper_init_from_file(String modelPath);
     void whisper_free(Pointer context);

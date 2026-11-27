@@ -112,7 +112,9 @@ public class AudioRecorder {
         if (target == RecordTarget.FILE) {
             this.outputFile = file;
             if (outputFile != null && outputFile.exists()) {
-                outputFile.delete();
+                if (!outputFile.delete()) {
+                    Log.w(TAG, "Failed to delete existing output file: " + outputFile.getAbsolutePath());
+                }
             }
             this.memoryOutputStream = null;
         } else {
@@ -275,17 +277,24 @@ public class AudioRecorder {
             int b2 = sourcePcm.read();
             if (b2 == -1) return -1;
 
-            short sample = (short) ((b2 << 8) | (b1 & 0xFF));
+            short sample = decodePcm16Short(b1, b2);
             float floatVal = Math.max(-1.0f, Math.min(1.0f, sample / 32768.0f));
-            int bits = Float.floatToIntBits(floatVal);
-
-            floatBuffer[0] = (byte) (bits & 0xFF);
-            floatBuffer[1] = (byte) ((bits >> 8) & 0xFF);
-            floatBuffer[2] = (byte) ((bits >> 16) & 0xFF);
-            floatBuffer[3] = (byte) ((bits >> 24) & 0xFF);
+            encodeFloatToLittleEndianBytes(floatVal, floatBuffer);
 
             floatBufferPos = 1;
             return floatBuffer[0] & 0xFF;
+        }
+
+        private static short decodePcm16Short(int lowByte, int highByte) {
+            return (short) ((highByte << 8) | (lowByte & 0xFF));
+        }
+
+        private static void encodeFloatToLittleEndianBytes(float floatVal, byte[] targetBuffer) {
+            int bits = Float.floatToIntBits(floatVal);
+            targetBuffer[0] = (byte) (bits & 0xFF);
+            targetBuffer[1] = (byte) ((bits >> 8) & 0xFF);
+            targetBuffer[2] = (byte) ((bits >> 16) & 0xFF);
+            targetBuffer[3] = (byte) ((bits >> 24) & 0xFF);
         }
 
         @Override
